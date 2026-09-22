@@ -20,6 +20,6 @@
 const model = defineModel();
 const emit = defineEmits(['next']);
 function submit() {
-  if (model && model.trim()) emit('next');
+  if (model.value && model.value.trim()) emit('next');
 }
 </script>
