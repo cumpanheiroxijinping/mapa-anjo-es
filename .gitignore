@@ -1,0 +1,7 @@
+node_modules
+dist
+.env
+*.local
+.DS_Store
+Lectura del Ángel de la Guarda.html
+Lectura del Ángel de la Guarda_files
