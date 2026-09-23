@@ -1,29 +1,45 @@
 <template>
   <div class="form-content">
-    <h3 class="titulo-pergunta-signo">¿En qué Año naciste?</h3>
-    <br />
-    <div class="input-control">
-      <input
-        v-model="model"
-        type="number"
-        min="1900"
-        max="2100"
-        class="field-input"
-        placeholder="Ej: 1990"
-        @keyup.enter="submit"
-      />
+    <p class="titulo-sesao">¿En qué Año naciste?</p>
+    <div class="year-selector">
+      <ul class="year-grid">
+        <li v-for="y in years" :key="y" class="year-grid-item">
+          <button
+            class="year-button"
+            :class="{ 'year-button--highlight': model === y }"
+            @click="pick(y)"
+          >
+            {{ y }}
+          </button>
+        </li>
+      </ul>
     </div>
-    <br />
-    <button class="button-form pulsating-button" :disabled="!valid" @click="submit">Continuar</button>
+    <div class="navigation-container">
+      <btn class="btn-voltar" @click="emit('back')">&lt; Volver</btn>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+
 const model = defineModel();
-const emit = defineEmits(['next']);
-const valid = computed(() => model.value >= 1900 && model.value <= 2100);
-function submit() {
-  if (valid.value) emit('next');
+const emit = defineEmits(['next', 'back']);
+
+// The year step depends on the chosen decade (previous step). The original
+// shows exactly the 10 years inside the selected decade.
+const props = defineProps({
+  decade: { type: String, default: '' },
+});
+
+const years = computed(() => {
+  if (!props.decade) return [];
+  const start = Number(props.decade);
+  return Array.from({ length: 10 }, (_, i) => String(start + i));
+});
+
+function pick(v) {
+  model.value = v;
+  emit('next');
 }
 </script>

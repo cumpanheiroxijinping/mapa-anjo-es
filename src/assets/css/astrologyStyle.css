@@ -173,6 +173,11 @@ body {
 }
 .field-input::placeholder { color: rgba(255, 255, 255, 0.5); }
 .field-input:focus { border-color: var(--gold); }
+.error-field {
+  color: #cc1006;
+  font-size: 0.75rem;
+  margin-top: 5px;
+}
 
 /* Buttons */
 .button-form {
@@ -202,6 +207,224 @@ body {
 }
 .cta-big { font-size: 20px; padding: 18px 48px; }
 .final-cta { text-align: center; margin: 28px 0; }
+
+/* ---------- Original question title (.titulo-sesao) ---------- */
+.titulo-sesao {
+  margin-bottom: 30px;
+  font-size: 2.125rem;
+  letter-spacing: -1px;
+  line-height: 1;
+  border-radius: 14px;
+  padding: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+}
+
+/* ---------- Década selector ---------- */
+.decade-selector { width: 100%; max-width: 600px; margin: 0 auto; }
+.decade-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0;
+  list-style-type: none;
+  margin: -5px;
+}
+.decade-grid-item { flex-basis: calc(25% - 10px); margin: 5px; }
+.decade-button {
+  width: 100%;
+  padding: 12px 8px;
+  background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+  border: 2px solid #87ceeb;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #4682b4;
+  box-shadow: 0 2px 8px rgba(135, 206, 235, 0.2);
+  font-family: inherit;
+}
+.decade-button:hover {
+  background: linear-gradient(135deg, #fff, #f0f8ff);
+  border-color: gold;
+  transform: scale(1.05);
+}
+.decade-button:active { transform: scale(0.98); }
+.decade-button--highlight { background-color: gold; color: #000; }
+@media (max-width: 768px) { .decade-grid-item { flex-basis: calc(33.333% - 10px); } }
+@media (max-width: 480px) { .decade-grid-item { flex-basis: calc(50% - 10px); } }
+
+/* ---------- Año selector ---------- */
+.year-selector { width: 100%; max-width: 800px; margin: 0 auto; }
+.year-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0;
+  list-style-type: none;
+  margin: -4px;
+}
+.year-grid-item { flex-basis: calc(20% - 8px); margin: 4px; }
+.year-button {
+  width: 100%;
+  padding: 12px 8px;
+  text-align: center;
+  background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+  color: #4682b4;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  font-size: 1rem;
+  border: 2px solid #87ceeb;
+  border-radius: 6px;
+  font-family: inherit;
+  font-weight: 600;
+}
+.year-button:hover {
+  background: linear-gradient(135deg, #fff, #f0f8ff);
+  border-color: gold;
+  transform: scale(1.05);
+}
+.year-button:active { transform: scale(0.98); }
+.year-button--highlight { background-color: gold; color: #000; } /* fallback when highlight class used */
+.year-button.year-button--highlight { background: gold; color: #000; }
+@media (max-width: 768px) { .year-grid-item { flex-basis: calc(25% - 8px); } }
+@media (max-width: 480px) { .year-grid-item { flex-basis: calc(33.333% - 8px); } }
+
+/* ---------- Día de Nacimiento selector (2-month grid) ---------- */
+.birth-day-selector { width: 100%; max-width: 800px; margin: 0 auto; }
+.dsc698 { display: flex; gap: 15px; flex-direction: column; }
+.dsc698 .dc48194 { width: 100%; }
+.dc48194 .header31283 {
+  background: linear-gradient(135deg, #87ceeb, #4682b4);
+  padding: 5px;
+  border-radius: 7px;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.dsc698 .header31283 h4 { color: #fff; font-size: 20px; font-weight: 500; margin: 0; }
+.dc48194 .dt948389 { width: 100%; }
+.ls318329 {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding: 0;
+  list-style-type: none;
+  justify-content: center;
+}
+.dc48194 .dt948389 li {
+  width: calc(20% - 16px);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 5px;
+  transition: 0.2s;
+  background: #fff;
+  color: #000;
+  border-radius: 5px;
+}
+.dc48194 .dt948389 li:hover { background: var(--color-white-hover, #f0f8ff); }
+.dc48194 .dt948389 li.active { background: gold; color: #000; }
+
+/* ---------- Estado Civil & Desafío buttons ---------- */
+.birth-date-list { list-style: none; padding: 0; }
+.estado-civil-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.botao-civil,
+.botao-desafio {
+  background: linear-gradient(135deg, #87ceeb, #5f9ea0);
+  border: 3px solid #5f9ea0;
+  padding: 12px 10px;
+  border-radius: 14px;
+  width: 100%;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(135, 206, 235, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  line-height: 1.2;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.botao-civil img { height: 75px; }
+.botao-desafio { min-height: 100px; font-size: 1rem; }
+.botao-desafio img { height: 65px; }
+.botao-civil:hover,
+.botao-desafio:hover { transform: translateY(-2px); border-color: gold; }
+.botao-civil.active,
+.botao-desafio.active { border-color: gold; background: linear-gradient(135deg, #5f9ea0, #4682b4); }
+.row { display: flex; flex-wrap: wrap; }
+.col-6 { width: 50%; box-sizing: border-box; padding: 0 5px; }
+.col-sm-6, .col-md-6, .col-lg-6 { width: 50%; }
+@media (max-width: 480px) {
+  .estado-civil-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0; list-style: none; }
+  .botao-civil { font-size: 0.75rem; min-height: 80px; padding: 8px 6px; }
+  .botao-civil img { height: 60px; }
+}
+
+/* ---------- Sexo (step 7) ---------- */
+.popup-overlay {
+  display: flex;
+  place-content: center;
+  flex-flow: column wrap;
+  align-items: center;
+}
+.gender-wrap {
+  display: flex;
+  place-content: center;
+  flex-flow: column wrap;
+  align-items: center;
+}
+.gender-options {
+  display: flex;
+  place-content: center;
+  flex-flow: wrap;
+  align-items: center;
+}
+.btn-send {
+  background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+  border: 3px solid #87ceeb;
+  padding: 20px 30px;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4682b4;
+  margin: 10px;
+  box-shadow: 0 4px 15px rgba(135, 206, 235, 0.3);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-send:hover { transform: translateY(-2px); border-color: gold; }
+.btn-send.active { border-color: gold; background: linear-gradient(135deg, #e6f3ff, #fff); }
+
+/* ---------- Volver button ---------- */
+.navigation-container { width: 100%; display: flex; justify-content: center; margin-top: 20px; }
+.btn-voltar {
+  background: linear-gradient(135deg, #87ceeb, #4682b4);
+  border: 2px solid #5f9ea0;
+  padding: 10px 25px;
+  border-radius: 25px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-voltar:hover { transform: translateY(-2px); }
 
 /* Privacy */
 .privacy-section { margin-top: 16px; }
