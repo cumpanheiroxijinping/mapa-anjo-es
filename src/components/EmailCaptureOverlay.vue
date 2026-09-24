@@ -55,4 +55,14 @@ async function submit() {
   z-index: 9999;
   padding: 16px;
 }
+/* Keep the modal centered and capped on wide screens */
+.email-overlay :deep(.form-modal) {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.email-overlay :deep(.field-input) {
+  margin-left: auto;
+  margin-right: auto;
+}
 </style>

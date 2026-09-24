@@ -6,7 +6,17 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          // Treat vturb-* smart player tags as native custom elements so the
+          // Vue compiler doesn't try to resolve them as components.
+          isCustomElement: (tag) => tag.startsWith('vturb-'),
+        },
+      },
+    }),
+  ],
   resolve: { alias: { '@': path.join(__dirname, 'src') } },
   build: { outDir: 'dist' },
   server: {

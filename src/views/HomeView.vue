@@ -29,13 +29,13 @@
       <!-- VSL 1 -->
       <section v-show="stage === 'vsl1'">
         <h2 class="subtitulo-principal" style="text-align:center;">Tu lectura personalizada está cargando…</h2>
-        <VslIframe :embed-id="config.VSL1_EMBED_ID" :capture-at-sec="config.EMAIL_CAPTURE_AT_SEC" @email-capture-due="onEmailCaptureDue" />
+        <VturbVideo :cfg="config.VSL1_VTURB" />
       </section>
 
       <!-- VSL 2 -->
       <section v-show="stage === 'vsl2'">
         <h2 class="subtitulo-principal" style="text-align:center;">Aquí está el mensaje de tu Ángel…</h2>
-        <VslIframe :embed-id="config.VSL2_EMBED_ID" />
+        <VturbVideo :cfg="config.VSL2_VTURB" />
       </section>
 
       <!-- ALERT MODAL -->
@@ -55,9 +55,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import QuizFlow from '../components/QuizFlow.vue';
-import VslIframe from '../components/VslIframe.vue';
+import VturbVideo from '../components/VturbVideo.vue';
 import AlertModal from '../components/AlertModal.vue';
 import FinalCta from '../components/FinalCta.vue';
 import EmailCaptureOverlay from '../components/EmailCaptureOverlay.vue';
@@ -69,6 +69,8 @@ const stage = ref('landing'); // landing | quiz | vsl1 | vsl2 | alert | cta
 const emailOpen = ref(false);
 const quizAnswers = ref({});
 
+let captureTimer = null;
+
 function onQuizComplete(answers) {
   quizAnswers.value = answers;
   track('quiz_completed', { sign: answers.zodiac_sign });
@@ -77,10 +79,20 @@ function onQuizComplete(answers) {
   stage.value = 'vsl1';
 }
 
-function onEmailCaptureDue() {
-  emailOpen.value = true;
-  track('video_interaction', { vsl: 1, moment: 'email_capture_shown' });
-}
+// Start the email-capture timer only when VSL1 becomes visible (not on page load,
+// since the section uses v-show and is mounted before the user reaches it).
+watch(stage, (next) => {
+  if (captureTimer) {
+    clearTimeout(captureTimer);
+    captureTimer = null;
+  }
+  if (next === 'vsl1') {
+    captureTimer = setTimeout(() => {
+      emailOpen.value = true;
+      track('video_interaction', { vsl: 1, moment: 'email_capture_shown' });
+    }, config.EMAIL_CAPTURE_AT_SEC * 1000);
+  }
+});
 
 async function onEmailCaptured(email) {
   emailOpen.value = false;
@@ -100,6 +112,7 @@ onMounted(() => {
   window.addEventListener('popstate', onPopState);
 });
 onBeforeUnmount(() => {
+  if (captureTimer) clearTimeout(captureTimer);
   window.removeEventListener('popstate', onPopState);
 });
 </script>
