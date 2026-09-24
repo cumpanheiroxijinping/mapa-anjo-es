@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+	<meta charset="UTF-8">
+	<title>PP &#8211; UP 1 &#8211; Mapa Anjo &#8211; LATAM &#8211; Mistérios da Alma</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+	<style>
+		/* Reset básico e coluna centralizada */
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			padding: 24px 16px 60px;
+			background: #ffffff;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+			color: #1f2937;
+		}
+		.wrap {
+			max-width: 800px;
+			margin: 0 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 24px;
+			text-align: center;
+		}
+		h2 {
+			font-size: 1.5em;
+			line-height: 1.4;
+			font-weight: 700;
+			margin: 0;
+		}
+		.stop-img {
+			max-width: 120px;
+			height: auto;
+			margin: 0 auto;
+			display: block;
+		}
+		.espera {
+			font-size: 2.4em;
+			font-weight: 800;
+			margin: 0;
+		}
+		.atualizacao span {
+			background-color: #FFE800;
+			padding: 2px 6px;
+		}
+
+		/* Mantém a div oculta inicialmente para o delay do Vturb funcionar */
+		.esconder {
+			display: none;
+		}
+
+		/* Estilos do botão de compra principal */
+		.buy-button-es {
+			display: block;
+			margin: 0 auto;
+			background-color: #27ae60;
+			color: white !important;
+			text-decoration: none;
+			font-size: 1.3em;
+			font-weight: bold;
+			padding: 18px 40px;
+			border-radius: 8px;
+			box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+			transition: all 0.3s ease;
+			text-transform: uppercase;
+			width: 100%;
+			max-width: 400px;
+			letter-spacing: 1px;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+		}
+
+		.buy-button-es:hover {
+			background-color: #219150;
+			transform: translateY(-3px);
+			box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6);
+			color: white !important;
+		}
+
+		/* Estilo do botão de recusa mais claro e sublinhado */
+		.decline-link {
+			display: inline-block;
+			margin-top: 20px;
+			color: #64748b; /* Cinza claro discreto (não preto) */
+			text-decoration: underline;
+			font-size: 0.95em;
+			transition: color 0.3s ease;
+			cursor: pointer;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+		}
+
+		.decline-link:hover {
+			color: #94a3b8; /* Fica um pouco mais claro ao passar o mouse */
+		}
+
+		/* Responsividade do botão para mobile */
+		@media screen and (max-width: 768px) {
+			.buy-button-es {
+				font-size: 1.15em;
+				padding: 16px 20px;
+			}
+			.espera { font-size: 2em; }
+		}
+	</style>
+</head>
+<body>
+	<div class="wrap">
+
+		<!-- Avisos de retorno / fechamento -->
+		<h2>Si hace clic en el botón <strong>"volver"</strong>, es posible que se le cobre dos veces su pedido.</h2>
+		<h2>¡IMPORTANTE! No cierre esta ventana ni haga clic en el botón "Volver".</h2>
+
+		<!-- Sinal de stop -->
+		<img class="stop-img" decoding="async" src="https://images.vexels.com/content/143473/preview/stop-sign-icon-hand-d5a045.png" alt="" loading="lazy" />
+
+		<!-- Cabeçalho de espera -->
+		<h2 class="espera">¡ESPERA!</h2>
+		<h2 class="atualizacao"><span>Vea la importante actualización para nuevos miembros en el video a continuación.</span></h2>
+
+		<!-- VTURB - script da VSL mantido intacto -->
+		<vturb-smartplayer id="vid-698ccdc88e13003076396b4e" style="display: block; margin: 0 auto; width: 100%; max-width: 400px;"></vturb-smartplayer>
+		<script type="text/javascript"> var s=document.createElement("script"); s.src="https://scripts.converteai.net/0a246cdd-c6bd-48cb-b2bf-d2a8c03c2dd5/players/698ccdc88e13003076396b4e/v4/player.js", s.async=!0,document.head.appendChild(s); </script>
+
+		<!-- CONTAINER COM DELAY (Classe .esconder mantida) -->
+		<div class="esconder smartplayer-scroll-event" style="text-align:center; margin-top: 35px;">
+
+			<!-- Botão de Compra Destacado -->
+			<a href="https://go.centerpag.com/PPU38CQEPBB?upsell=true" class="buy-button-es">
+				¡SÍ, QUIERO ACEPTAR ESTA OFERTA ($ 39,00)!
+			</a>
+
+			<!-- Botão de Recusa Discreto -->
+			<a href="https://misteriosdaalma.com/pp-down-1-mapa-anjo-latam" class="decline-link">
+				No gracias, deseo rechazar esta oferta.
+			</a>
+
+		</div>
+
+	</div>
+
+	<!-- SCRIPT DO DELAY MANTIDO INTACTO -->
+	<script>
+		var delaySeconds = 335;
+		var player = document.querySelector("vturb-smartplayer");
+		player.addEventListener("player:ready", function() {
+			player.displayHiddenElements(delaySeconds, [".esconder"], {
+				persist: true
+			});
+		});
+	</script>
+</body>
+</html>
