@@ -23,6 +23,10 @@ export const config = {
   },
   CHECKOUT_URL: import.meta.env.VITE_CHECKOUT_URL || 'https://pay.youshop.co/DS7KII7HJJ5MLP59',
   FUNNEL_NAME: import.meta.env.VITE_FUNNEL_NAME || 'angel_guarda',
-  // Exact second in VSL1 at which the email capture overlay opens (original: 5:04).
-  EMAIL_CAPTURE_AT_SEC: Number(import.meta.env.VITE_EMAIL_CAPTURE_AT_SEC || 304),
+  // Wall-clock second (after VSL1 starts) at which the email capture overlay
+  // opens. Exact video-time sync would need to be configured inside the
+  // VTurb/ConverteAI dashboard (their lead-capture-at-timestamp feature), since
+  // the player runs in a cross-origin iframe and we can't read currentTime.
+  // Set to 5:06 (306s) to match the requested moment.
+  EMAIL_CAPTURE_AT_SEC: Number(import.meta.env.VITE_EMAIL_CAPTURE_AT_SEC || 306),
 };

@@ -65,4 +65,8 @@ async function submit() {
   margin-left: auto;
   margin-right: auto;
 }
+/* Center the submit button inside the modal */
+.email-overlay :deep(.form-button) {
+  text-align: center;
+}
 </style>
