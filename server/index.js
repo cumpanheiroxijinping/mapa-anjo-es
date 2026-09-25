@@ -18,6 +18,17 @@ app.use('/api/admin', adminRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// --- Standalone funnel pages (upsell / downsell / thank-you) ---
+// These live in root folders (up1, up2, up3, dw1, dw2, dw3, gracias) as
+// self-contained HTML and must be reachable at /up1, /up2, ... /gracias.
+const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias'];
+for (const folder of funnelFolders) {
+  const dir = path.join(__dirname, '..', folder);
+  if (fs.existsSync(dir)) {
+    app.use('/' + folder, express.static(dir, { extensions: ['html'] }));
+  }
+}
+
 // --- Static frontend ---
 if (fs.existsSync(distDir)) {
   app.use(express.static(distDir));
