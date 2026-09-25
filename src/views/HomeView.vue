@@ -27,13 +27,13 @@
       </section>
 
       <!-- VSL 1 -->
-      <section v-show="stage === 'vsl1'">
+      <section v-if="stage === 'vsl1'">
         <h2 class="subtitulo-principal" style="text-align:center;">Tu lectura personalizada está cargando…</h2>
         <VturbVideo :cfg="config.VSL1_VTURB" />
       </section>
 
       <!-- VSL 2 -->
-      <section v-show="stage === 'vsl2'">
+      <section v-if="stage === 'vsl2'">
         <h2 class="subtitulo-principal" style="text-align:center;">Aquí está el mensaje de tu Ángel…</h2>
         <VturbVideo :cfg="config.VSL2_VTURB" />
       </section>
