@@ -8,6 +8,7 @@ const routes = [
   { path: '/g-ass', name: 'g-ass', component: () => import('../views/UpsellView.vue') },
   { path: '/obrigado-correio', name: 'obrigado', component: () => import('../views/ThankYouView.vue') },
   { path: '/brd', name: 'exit', component: () => import('../views/ExitView.vue') },
+  { path: '/admin', name: 'admin', component: () => import('../views/DashboardView.vue') },
 ];
 
 const router = createRouter({

@@ -4,7 +4,11 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import leadRouter from './routes/lead.js';
 import adminRouter from './routes/admin.js';
+import emailRouter from './routes/email.js';
+import trackingRouter from './routes/tracking.js';
+import brevoWebhookRouter from './routes/brevo-webhook.js';
 import { initDb } from './db.js';
+import { startEmailScheduler } from './services/email-campaign.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, '..', 'dist');
@@ -15,6 +19,13 @@ app.use(express.json());
 // --- API routes (MUST be registered before the SPA fallback) ---
 app.use('/api/lead', leadRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/email', emailRouter);
+app.use('/api/brevo/webhook', brevoWebhookRouter);
+
+// --- Self-hosted email tracking (pixel + click redirect) ---
+// Public routes, served off the public TRACKING_BASE_URL. Registered before the
+// SPA fallback so they are never swallowed by index.html.
+app.use('/t', trackingRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
@@ -54,6 +65,15 @@ async function start() {
   } else {
     console.warn('[db] DATABASE_URL not set — lead persistence disabled');
   }
+
+  // Email campaign scheduler (in-process). No-op if Brevo key missing, but the
+  // timer is harmless and lets campaigns run once credentials are added.
+  try {
+    startEmailScheduler();
+  } catch (err) {
+    console.error('[scheduler] failed to start', err);
+  }
+
   app.listen(PORT, () => console.log(`[server] listening on :${PORT}`));
 }
 
