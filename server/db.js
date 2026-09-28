@@ -34,13 +34,24 @@ CREATE TABLE IF NOT EXISTS leads (
   source          TEXT DEFAULT 'web',
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_leads_email ON leads(email);
 CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC);
 `;
 
 export async function initDb() {
   const p = getPool();
   await p.query(CREATE_TABLE);
+  // Remove pre-existing duplicate rows: for each email keep the most complete
+  // record (the one with demographic data), then enforce email uniqueness.
+  await p.query(`
+    DELETE FROM leads
+    WHERE id NOT IN (
+      SELECT DISTINCT ON (email) id FROM leads
+      ORDER BY email, (gender IS NOT NULL) DESC, id ASC
+    );
+  `);
+  await p.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_leads_email ON leads(email);
+  `);
   console.log('[db] leads table ready');
 }
 
@@ -52,6 +63,21 @@ export async function insertLead(lead) {
        zodiac_sign, life_challenge, utm_source, utm_medium, utm_campaign,
        utm_term, utm_content, utm_prefix, source)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+    ON CONFLICT (email) DO UPDATE SET
+      first_name     = COALESCE(leads.first_name, EXCLUDED.first_name),
+      gender         = COALESCE(leads.gender, EXCLUDED.gender),
+      civil_status   = COALESCE(leads.civil_status, EXCLUDED.civil_status),
+      birth_day      = COALESCE(leads.birth_day, EXCLUDED.birth_day),
+      birth_year     = COALESCE(leads.birth_year, EXCLUDED.birth_year),
+      zodiac_sign    = COALESCE(leads.zodiac_sign, EXCLUDED.zodiac_sign),
+      life_challenge = COALESCE(leads.life_challenge, EXCLUDED.life_challenge),
+      utm_source     = COALESCE(leads.utm_source, EXCLUDED.utm_source),
+      utm_medium     = COALESCE(leads.utm_medium, EXCLUDED.utm_medium),
+      utm_campaign   = COALESCE(leads.utm_campaign, EXCLUDED.utm_campaign),
+      utm_term       = COALESCE(leads.utm_term, EXCLUDED.utm_term),
+      utm_content    = COALESCE(leads.utm_content, EXCLUDED.utm_content),
+      utm_prefix     = COALESCE(leads.utm_prefix, EXCLUDED.utm_prefix),
+      source         = COALESCE(leads.source, EXCLUDED.source)
     RETURNING id, created_at;
   `;
   const values = [
