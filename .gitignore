@@ -5,3 +5,8 @@ dist
 .DS_Store
 Lectura del Ángel de la Guarda.html
 Lectura del Ángel de la Guarda_files
+
+# Scratch / working artifacts (not part of the deployable app)
+passos-modelar/
+"Especificação de Automação de E-mails.md"
+

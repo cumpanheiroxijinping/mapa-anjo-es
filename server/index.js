@@ -37,7 +37,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 // --- Standalone funnel pages (upsell / downsell / thank-you) ---
 // These live in root folders (up1, up2, up3, dw1, dw2, dw3, gracias) as
 // self-contained HTML and must be reachable at /up1, /up2, ... /gracias.
-const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias'];
+const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias', 'soporte'];
 for (const folder of funnelFolders) {
   const dir = path.join(__dirname, '..', folder);
   if (fs.existsSync(dir)) {
