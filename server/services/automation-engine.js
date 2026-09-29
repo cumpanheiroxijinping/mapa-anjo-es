@@ -44,6 +44,7 @@ const AUTOMATION_TRIGGERS = {
   vsl2_75: ['E'],
   checkout_redirected: ['F'],
   checkout_started: ['F'],
+  checkout_abandoned: ['F'],
   payment_failed: ['G'],
   payment_pending: ['H'],
   purchase_completed: ['I', 'J'],
