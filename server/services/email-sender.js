@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { buildUnsubscribeToken } from './link-tokens.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.join(__dirname, '..', 'email-templates');
@@ -189,7 +190,7 @@ async function fetchWithRetry(url, options, { retries = 3, timeoutMs = 10000, ba
  */
 export function leadToTemplateVars(lead = {}) {
   const age = computeAge(lead.birth_year);
-  return {
+  const base = {
     FIRSTNAME: (lead.first_name || '').toString().split(' ')[0],
     NAME: (lead.first_name || '').toString().trim(),
     EMAIL: (lead.email || '').toString(),
@@ -206,7 +207,22 @@ export function leadToTemplateVars(lead = {}) {
     UTM_TERM: (lead.utm_term || '').toString(),
     UTM_CONTENT: (lead.utm_content || '').toString(),
     UTM_PREFIX: (lead.utm_prefix || '').toString(),
+    // New automation variables (spec §12/§13)
+    CHECKOUT_URL: process.env.CHECKOUT_URL || '',
+    SUPPORT_URL: process.env.SUPPORT_URL || '',
+    PRIMARY_CHALLENGE_LABEL: challengeLabel(lead.life_challenge || lead.primary_challenge),
+    MARITAL_STATUS_LABEL: maritalLabel(lead.civil_status),
   };
+
+  // Unsubscribe link is built only when a public base URL + email exist.
+  const trackBase = (process.env.TRACKING_BASE_URL || '').replace(/\/$/, '');
+  const email = (lead.email || '').toString();
+  if (trackBase && email) {
+    base.UNSUBSCRIBE_URL = `${trackBase}/t/u/${buildUnsubscribeToken(email)}`;
+  } else {
+    base.UNSUBSCRIBE_URL = process.env.SUPPORT_URL || '#';
+  }
+  return base;
 }
 
 function computeAge(birthYear) {
@@ -217,6 +233,44 @@ function computeAge(birthYear) {
   const age = current - yr;
   if (age < 0 || age > 130) return '';
   return String(age);
+}
+
+// Challenge code -> readable label (spec §11). Source field may be the raw
+// life_challenge string from the leads table.
+const CHALLENGE_LABELS = {
+  love: 'tu vida amorosa',
+  finance: 'tus finanzas',
+  finances: 'tus finanzas',
+  financial: 'tus finanzas',
+  health: 'tu salud',
+  happiness: 'tu felicidad',
+  felicidad: 'tu felicidad',
+};
+const MARITAL_LABELS = {
+  solteiro: 'soltero/a',
+  soltera: 'soltera',
+  casado: 'casado/a',
+  casada: 'casada',
+  viuvo: 'viudo/a',
+  viuva: 'viuda',
+  separado: 'separado/a',
+  separada: 'separada',
+  relacionamento: 'en una relación',
+  single: 'soltero/a',
+  married: 'casado/a',
+  widowed: 'viudo/a',
+  divorced: 'separado/a',
+  separated: 'separado/a',
+  relationship: 'en una relación',
+};
+
+function challengeLabel(value) {
+  if (!value) return '';
+  return CHALLENGE_LABELS[String(value).toLowerCase()] || String(value);
+}
+function maritalLabel(value) {
+  if (!value) return '';
+  return MARITAL_LABELS[String(value).toLowerCase()] || String(value);
 }
 
 /**

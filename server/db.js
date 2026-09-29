@@ -98,6 +98,121 @@ CREATE INDEX IF NOT EXISTS idx_events_type ON email_tracking_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_created ON email_tracking_events(created_at);
 `;
 
+const CREATE_CONTACT_STATE_TABLE = `
+CREATE TABLE IF NOT EXISTS contact_states (
+  email                    TEXT PRIMARY KEY,            -- normalized (lowercase), references leads(email)
+  funnel_stage             TEXT NOT NULL DEFAULT 'QUIZ_NEW',
+  main_product_status      TEXT NOT NULL DEFAULT 'none',-- none|pending|paid|refunded|chargeback
+  payment_status           TEXT NOT NULL DEFAULT 'none',-- none|initiated|pending|failed|paid|refunded
+  payment_method           TEXT,
+  order_id                 TEXT,
+  offer_id                 TEXT DEFAULT 'main',
+  main_product_price       NUMERIC,
+  main_product_currency    TEXT,
+  purchase_at              TIMESTAMPTZ,
+  refund_at                TIMESTAMPTZ,
+  chargeback_opened        BOOLEAN NOT NULL DEFAULT FALSE,
+  upsell_status            TEXT NOT NULL DEFAULT 'not_seen',-- not_seen|seen|paid|declined
+  upsell_purchase_at       TIMESTAMPTZ,
+  support_status           TEXT NOT NULL DEFAULT 'normal',-- normal|awaiting|issue
+  locale                   TEXT,
+  country                  TEXT,
+  phone                    TEXT,
+  timezone                 TEXT NOT NULL DEFAULT 'America/Mexico_City',
+  consent_email_at         TIMESTAMPTZ,
+  unsubscribe_at           TIMESTAMPTZ,
+  suppression_all_marketing BOOLEAN NOT NULL DEFAULT FALSE,
+  suppression_recovery     BOOLEAN NOT NULL DEFAULT FALSE,
+  hard_bounce              BOOLEAN NOT NULL DEFAULT FALSE,
+  quiz_step_reached        INTEGER,
+  quiz_completed_at        TIMESTAMPTZ,
+  primary_challenge        TEXT,                         -- love|finance|health|happiness
+  last_promo_email_at      TIMESTAMPTZ,                  -- 12h-gap enforcement (spec §9)
+  last_activity_at         TIMESTAMPTZ,
+  first_touch_at           TIMESTAMPTZ,
+  last_touch_at            TIMESTAMPTZ,
+  lead_source              TEXT,
+  tags                     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  lists                    JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_cs_stage ON contact_states(funnel_stage);
+CREATE INDEX IF NOT EXISTS idx_cs_main_status ON contact_states(main_product_status);
+CREATE INDEX IF NOT EXISTS idx_cs_unsub ON contact_states(unsubscribe_at);
+`;
+
+const CREATE_FUNNEL_EVENTS_TABLE = `
+CREATE TABLE IF NOT EXISTS funnel_events (
+  id           BIGSERIAL PRIMARY KEY,
+  event_id     UUID UNIQUE NOT NULL,        -- idempotency key (spec §15)
+  email        TEXT NOT NULL,
+  event_name   TEXT NOT NULL,
+  funnel_name  TEXT NOT NULL DEFAULT 'angel_guarda',
+  occurred_at  TIMESTAMPTZ,
+  page_url     TEXT,
+  utm          JSONB,
+  metadata     JSONB,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_fe_email_time ON funnel_events(email, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fe_name ON funnel_events(event_name);
+`;
+
+const CREATE_AUTOMATION_INSTANCES_TABLE = `
+CREATE TABLE IF NOT EXISTS automation_instances (
+  id            BIGSERIAL PRIMARY KEY,
+  email         TEXT NOT NULL,
+  automation_key TEXT NOT NULL,             -- A..K (spec §10)
+  status        TEXT NOT NULL DEFAULT 'active', -- active|completed|cancelled
+  started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at      TIMESTAMPTZ,
+  last_event_at TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Prevent duplicate ACTIVE instances per (email, automation).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_active_instance
+  ON automation_instances(email, automation_key) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_ai_email ON automation_instances(email);
+`;
+
+const CREATE_PENDING_SENDS_TABLE = `
+CREATE TABLE IF NOT EXISTS pending_sends (
+  id                    BIGSERIAL PRIMARY KEY,
+  email                 TEXT NOT NULL,
+  automation_instance_id BIGINT REFERENCES automation_instances(id) ON DELETE CASCADE,
+  automation_key        TEXT NOT NULL,
+  step_key              TEXT NOT NULL,
+  template              TEXT NOT NULL,
+  vars                  JSONB NOT NULL DEFAULT '{}'::jsonb,
+  priority              INTEGER NOT NULL,   -- 1 highest .. 8 broadcast (spec §9)
+  status                TEXT NOT NULL DEFAULT 'pending', -- pending|cancelled|sent|failed
+  send_at               TIMESTAMPTZ NOT NULL, -- already rolled out of silent hours
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  sent_at               TIMESTAMPTZ,
+  track_id              TEXT,
+  attempts              INTEGER NOT NULL DEFAULT 0,
+  error                 TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_ps_due ON pending_sends(status, send_at) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_ps_email_status ON pending_sends(email, status);
+CREATE INDEX IF NOT EXISTS idx_ps_instance ON pending_sends(automation_instance_id);
+`;
+
+const CREATE_POSTBACK_LOG_TABLE = `
+CREATE TABLE IF NOT EXISTS postback_log (
+  id           BIGSERIAL PRIMARY KEY,
+  code         TEXT UNIQUE NOT NULL,         -- Perfect Pay order code (idempotency)
+  email        TEXT,
+  raw_payload  JSONB NOT NULL,
+  status       TEXT,
+  mapped_event TEXT,
+  processed_at TIMESTAMPTZ,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_pb_email ON postback_log(email);
+`;
+
 export async function initDb() {
   const p = getPool();
   await p.query(CREATE_TABLE);
@@ -115,7 +230,12 @@ export async function initDb() {
   `);
   await p.query(CREATE_EMAIL_TABLES);
   await p.query(CREATE_TRACKING_TABLES);
-  console.log('[db] leads + email tables ready');
+  await p.query(CREATE_CONTACT_STATE_TABLE);
+  await p.query(CREATE_FUNNEL_EVENTS_TABLE);
+  await p.query(CREATE_AUTOMATION_INSTANCES_TABLE);
+  await p.query(CREATE_PENDING_SENDS_TABLE);
+  await p.query(CREATE_POSTBACK_LOG_TABLE);
+  console.log('[db] leads + email + automation tables ready');
 }
 
 export async function insertLead(lead) {
@@ -316,4 +436,322 @@ export async function countByStatus(campaignId) {
   const out = { pending: 0, sent: 0, failed: 0, skipped: 0 };
   for (const r of res.rows) out[r.status] = r.n;
   return out;
+}
+
+// ============================================================ Contact state
+
+const CONTACT_STATE_COLUMNS = `
+  email, funnel_stage, main_product_status, payment_status, payment_method,
+  order_id, offer_id, main_product_price, main_product_currency, purchase_at,
+  refund_at, chargeback_opened, upsell_status, upsell_purchase_at, support_status,
+  locale, country, phone, timezone, consent_email_at, unsubscribe_at,
+  suppression_all_marketing, suppression_recovery, hard_bounce, quiz_step_reached,
+  quiz_completed_at, primary_challenge, last_promo_email_at, last_activity_at,
+  first_touch_at, last_touch_at, lead_source, tags, lists, created_at, updated_at
+`;
+
+/**
+ * Ensure a contact_states row exists for the email, returning the current row
+ * (or a default-shaped object if DB unavailable). Inserts defaults on conflict.
+ */
+export async function upsertContactState(email, patch = {}) {
+  const p = getPool();
+  const e = (email || '').toString().toLowerCase();
+  await p.query(
+    `INSERT INTO contact_states (email) VALUES ($1)
+     ON CONFLICT (email) DO NOTHING`,
+    [e]
+  );
+  if (patch && Object.keys(patch).length) {
+    await updateContactState(e, patch);
+  }
+  return getContactState(e);
+}
+
+export async function getContactState(email) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT ${CONTACT_STATE_COLUMNS} FROM contact_states WHERE email = $1`,
+    [(email || '').toString().toLowerCase()]
+  );
+  return res.rows[0] || null;
+}
+
+/**
+ * Patch a contact_states row. `tags`/`lists` are MERGED (not replaced) when
+ * passed as arrays. Numeric/date fields accept ISO strings or native types.
+ */
+export async function updateContactState(email, patch = {}) {
+  const p = getPool();
+  const e = (email || '').toString().toLowerCase();
+  // Ensure row exists first (idempotent).
+  await p.query(
+    `INSERT INTO contact_states (email) VALUES ($1) ON CONFLICT (email) DO NOTHING`,
+    [e]
+  );
+
+  const sets = [];
+  const params = [e];
+  let n = 2;
+
+  const scalar = ['funnel_stage', 'main_product_status', 'payment_status',
+    'payment_method', 'order_id', 'offer_id', 'main_product_currency',
+    'refund_at', 'locale', 'country', 'phone', 'timezone', 'lead_source',
+    'quiz_step_reached', 'primary_challenge', 'support_status', 'upsell_status'];
+  for (const k of scalar) {
+    if (patch[k] !== undefined && patch[k] !== null) {
+      sets.push(`${k} = $${n++}`);
+      params.push(patch[k]);
+    }
+  }
+
+  const tsFields = ['purchase_at', 'upsell_purchase_at', 'consent_email_at',
+    'unsubscribe_at', 'last_promo_email_at', 'last_activity_at',
+    'first_touch_at', 'last_touch_at', 'quiz_completed_at'];
+  for (const k of tsFields) {
+    if (patch[k] !== undefined && patch[k] !== null) {
+      sets.push(`${k} = $${n++}`);
+      params.push(patch[k]);
+    }
+  }
+
+  const numeric = ['main_product_price'];
+  for (const k of numeric) {
+    if (patch[k] !== undefined && patch[k] !== null) {
+      sets.push(`${k} = $${n++}`);
+      params.push(Number(patch[k]));
+    }
+  }
+
+  const boolFields = ['chargeback_opened', 'suppression_all_marketing',
+    'suppression_recovery', 'hard_bounce'];
+  for (const k of boolFields) {
+    if (patch[k] !== undefined && patch[k] !== null) {
+      sets.push(`${k} = $${n++}`);
+      params.push(Boolean(patch[k]));
+    }
+  }
+
+  // Merge JSONB arrays for tags / lists.
+  if (Array.isArray(patch.tagsToAdd) && patch.tagsToAdd.length) {
+    sets.push(`tags = (tags || $$${n}::jsonb)::jsonb`);
+    params.push(JSON.stringify(patch.tagsToAdd));
+    n++;
+  }
+  if (Array.isArray(patch.tagsToRemove) && patch.tagsToRemove.length) {
+    sets.push(`tags = (tags - $$${n}::jsonb)::jsonb`);
+    params.push(JSON.stringify(patch.tagsToRemove));
+    n++;
+  }
+  if (Array.isArray(patch.listsToAdd) && patch.listsToAdd.length) {
+    sets.push(`lists = (lists || $$${n}::jsonb)::jsonb`);
+    params.push(JSON.stringify(patch.listsToAdd));
+    n++;
+  }
+  if (Array.isArray(patch.listsToRemove) && patch.listsToRemove.length) {
+    sets.push(`lists = (lists - $$${n}::jsonb)::jsonb`);
+    params.push(JSON.stringify(patch.listsToRemove));
+    n++;
+  }
+
+  if (!sets.length) return;
+  sets.push(`updated_at = now()`);
+  await p.query(
+    `UPDATE contact_states SET ${sets.join(', ')} WHERE email = $1`,
+    params
+  );
+}
+
+// ============================================================ Funnel events
+
+/**
+ * Insert a funnel event, ignoring duplicates by event_id (idempotency, spec §15).
+ * Returns { inserted: boolean }.
+ */
+export async function insertFunnelEvent(ev) {
+  const p = getPool();
+  const res = await p.query(
+    `INSERT INTO funnel_events
+       (event_id, email, event_name, funnel_name, occurred_at, page_url, utm, metadata)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb)
+     ON CONFLICT (event_id) DO NOTHING
+     RETURNING id`,
+    [
+      ev.event_id,
+      (ev.email || '').toString().toLowerCase(),
+      ev.event_name,
+      ev.funnel_name || process.env.FUNNEL_NAME || 'angel_guarda',
+      ev.occurred_at || new Date().toISOString(),
+      ev.page_url || null,
+      JSON.stringify(ev.utm || {}),
+      JSON.stringify(ev.metadata || {}),
+    ]
+  );
+  return { inserted: res.rowCount > 0 };
+}
+
+// ===================================================== Automation instances
+
+/**
+ * Create an active automation instance, ignoring if one is already active
+ * (partial unique index). Returns { created, id }.
+ */
+export async function upsertAutomationInstance(email, automationKey, startedAt) {
+  const p = getPool();
+  const e = (email || '').toString().toLowerCase();
+  try {
+    const res = await p.query(
+      `INSERT INTO automation_instances (email, automation_key, started_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (email, automation_key) WHERE status = 'active' DO NOTHING
+       RETURNING id`,
+      [e, automationKey, startedAt || new Date().toISOString()]
+    );
+    return { created: res.rowCount > 0, id: res.rows[0]?.id || null };
+  } catch (err) {
+    // Unique violation fallback (race) -> treat as already active.
+    if (err?.code === '23505') return { created: false, id: null };
+    throw err;
+  }
+}
+
+export async function getActiveInstances(email) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT id, email, automation_key, status, started_at
+     FROM automation_instances WHERE email = $1 AND status = 'active'`,
+    [(email || '').toString().toLowerCase()]
+  );
+  return res.rows;
+}
+
+/**
+ * End an automation instance (completed|cancelled).
+ */
+export async function endAutomationInstance(id, status = 'completed') {
+  const p = getPool();
+  await p.query(
+    `UPDATE automation_instances SET status = $2, ended_at = now() WHERE id = $1`,
+    [id, status]
+  );
+}
+
+// ============================================================ Pending sends
+
+/**
+ * Schedule a single send. Returns the inserted row id.
+ */
+export async function insertPendingSend({
+  email, automationInstanceId, automationKey, stepKey,
+  template, vars = {}, priority, sendAt,
+}) {
+  const p = getPool();
+  const res = await p.query(
+    `INSERT INTO pending_sends
+       (email, automation_instance_id, automation_key, step_key, template, vars, priority, send_at)
+     VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8)
+     RETURNING id`,
+    [
+      (email || '').toString().toLowerCase(),
+      automationInstanceId || null,
+      automationKey,
+      stepKey,
+      template,
+      JSON.stringify(vars || {}),
+      priority,
+      sendAt,
+    ]
+  );
+  return res.rows[0]?.id || null;
+}
+
+/**
+ * Due pending sends (send_at <= now, status pending), ordered by priority then time.
+ */
+export async function getDuePendingSends(limit = 50) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT id, email, automation_instance_id, automation_key, step_key,
+            template, vars, priority, send_at
+     FROM pending_sends
+     WHERE status = 'pending' AND send_at <= now()
+     ORDER BY priority ASC, send_at ASC
+     LIMIT $1`,
+    [limit]
+  );
+  return res.rows;
+}
+
+export async function markPendingSent(id, trackId) {
+  const p = getPool();
+  await p.query(
+    `UPDATE pending_sends SET status = 'sent', track_id = $2, sent_at = now(), attempts = attempts + 1
+     WHERE id = $1`,
+    [id, trackId]
+  );
+}
+
+export async function markPendingFailed(id, error) {
+  const p = getPool();
+  await p.query(
+    `UPDATE pending_sends SET status = 'failed', error = $2, attempts = attempts + 1
+     WHERE id = $1`,
+    [id, String(error).slice(0, 500)]
+  );
+}
+
+/**
+ * Cancel pending sends for an email, optionally only those with priority <= maxPriority
+ * (used to pause lower-priority sequences when a higher-priority automation starts).
+ * Returns number of rows cancelled.
+ */
+export async function cancelPendingByEmail(email, { onlyLowerPriorityThan = null, onlyAutomationKey = null } = {}) {
+  const p = getPool();
+  const e = (email || '').toString().toLowerCase();
+  const clauses = [`email = $1`, `status = 'pending'`];
+  const params = [e];
+  let n = 2;
+  if (onlyLowerPriorityThan != null) {
+    clauses.push(`priority < $${n++}`);
+    params.push(onlyLowerPriorityThan);
+  }
+  if (onlyAutomationKey) {
+    clauses.push(`automation_key = $${n++}`);
+    params.push(onlyAutomationKey);
+  }
+  const res = await p.query(
+    `UPDATE pending_sends SET status = 'cancelled' WHERE ${clauses.join(' AND ')}`,
+    params
+  );
+  return res.rowCount;
+}
+
+// ============================================================ Postback log
+
+/**
+ * Upsert a Perfect Pay postback by `code`. Reapplies when the status changes
+ * (e.g. pending -> approved) so the state machine processes the transition.
+ * Returns { inserted, statusChanged, row }.
+ */
+export async function insertPostbackLog({ code, email, rawPayload, status, mappedEvent }) {
+  const p = getPool();
+  const e = email ? (email || '').toString().toLowerCase() : null;
+  const existing = await p.query(
+    `SELECT id, status FROM postback_log WHERE code = $1`,
+    [code]
+  );
+  const prev = existing.rows[0];
+  const statusChanged = !prev || prev.status !== status;
+  await p.query(
+    `INSERT INTO postback_log (code, email, raw_payload, status, mapped_event, processed_at)
+     VALUES ($1, $2, $3::jsonb, $4, $5, now())
+     ON CONFLICT (code) DO UPDATE
+       SET email = EXCLUDED.email,
+           raw_payload = EXCLUDED.raw_payload,
+           status = EXCLUDED.status,
+           mapped_event = EXCLUDED.mapped_event,
+           processed_at = now()`,
+    [code, e, JSON.stringify(rawPayload || {}), status, mappedEvent]
+  );
+  return { inserted: !prev, statusChanged, row: prev || null };
 }

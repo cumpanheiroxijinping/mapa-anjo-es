@@ -1,0 +1,48 @@
+Subject line: El mecanismo del rádio y la señal
+Preheader: Una clave para tu ángel
+From: Mapa del Ángel - hola@mapa-del-angel.com
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>lead_vsl2_2_happiness</title>
+</head>
+<body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:24px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 28px;">
+              <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME% ✨</h1>
+              <p style="margin:0 0 16px;line-height:1.6;font-size:16px;">El agotamiento de sostener todo y la invisibilidad merecen un descanso. Este mensaje habla de volver a tu propio eje.</p>
+              <p style="margin:0 0 16px;line-height:1.6;font-size:16px;">
+                Tu ángel dejó preparada la segunda parte de tu lectura (T+8 h).
+                Está hecha según tu signo %ZODIAC_SIGN% y tu etapa de vida.
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr><td style="border-radius:8px;background:#f4d58d;">
+                  <a href="https://mapa.timeoffaith.online/" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">
+                    Ver mi lectura
+                  </a>
+                </td></tr>
+              </table>
+
+      <p style="margin:28px 0 0;font-size:13px;color:#9aa0b5;">
+        Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda
+      </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:12px;color:#6b7186;">
+          <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
+          &nbsp;·&nbsp;
+          <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

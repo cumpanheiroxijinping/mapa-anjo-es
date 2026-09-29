@@ -46,7 +46,7 @@ From: Mapa del Ángel - hola@mapa-del-angel.com
           </tr>
         </table>
         <p style="margin:16px 0 0;font-size:12px;color:#6b7186;">
-          <a href="%UNSUBSCRIBELINK%" style="color:#6b7186;">Cancelar suscripción</a>
+          <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
         </p>
       </td>
     </tr>

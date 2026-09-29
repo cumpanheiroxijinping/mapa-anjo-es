@@ -1,0 +1,43 @@
+Subject line: Confirmamos tu pago pendiente
+Preheader: undefined
+From: Mapa del Ángel - hola@mapa-del-angel.com
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>payment_pending_1</title>
+</head>
+<body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding:24px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 28px;">
+              <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME% ✨</h1>
+              <p style="margin:0 0 16px;line-height:1.6;font-size:16px;">
+                Recibimos tu solicitud de pago. Mientras se confirma, aqui están las
+                instrucciones para completarlo (válido hasta el vencimiento).
+              </p>
+              <p style="margin:0 0 24px;line-height:1.6;font-size:16px;">
+                [INSTRUCCIONES_PAGO_PENDIENTE]
+              </p>
+
+      <p style="margin:28px 0 0;font-size:13px;color:#9aa0b5;">
+        Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda
+      </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:12px;color:#6b7186;">
+          <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
+          &nbsp;·&nbsp;
+          <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

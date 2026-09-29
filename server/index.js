@@ -7,8 +7,11 @@ import adminRouter from './routes/admin.js';
 import emailRouter from './routes/email.js';
 import trackingRouter from './routes/tracking.js';
 import brevoWebhookRouter from './routes/brevo-webhook.js';
+import eventRouter from './routes/event.js';
+import perfectPayRouter from './routes/perfectpay-webhook.js';
 import { initDb } from './db.js';
 import { startEmailScheduler } from './services/email-campaign.js';
+import { startAutomationEngine } from './services/automation-engine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, '..', 'dist');
@@ -21,6 +24,8 @@ app.use('/api/lead', leadRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/brevo/webhook', brevoWebhookRouter);
+app.use('/api/event', eventRouter);
+app.use('/api/postback', perfectPayRouter);
 
 // --- Self-hosted email tracking (pixel + click redirect) ---
 // Public routes, served off the public TRACKING_BASE_URL. Registered before the
@@ -72,6 +77,13 @@ async function start() {
     startEmailScheduler();
   } catch (err) {
     console.error('[scheduler] failed to start', err);
+  }
+
+  // Event-driven automation engine (timers, exclusions, silent hours).
+  try {
+    startAutomationEngine();
+  } catch (err) {
+    console.error('[automation] failed to start', err);
   }
 
   app.listen(PORT, () => console.log(`[server] listening on :${PORT}`));

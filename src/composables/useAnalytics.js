@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------
 
 import { config } from '../config.js';
+import { fireEvent } from './useEvent.js';
 
 function getUtmPrefix() {
   try {
@@ -35,6 +36,12 @@ export function track(eventName, props = {}) {
   // Console log as the lightweight own-analytics sink. Replace with your own
   // PostHog/GA4 project here if desired.
   console.log('[analytics]', payload);
+
+  // Best-effort: forward funnel events to the backend automation engine so
+  // state transitions + recovery sequences trigger (spec §4). Non-taxonomy
+  // events (e.g. internal UI) are skipped by the backend's known-set but still
+  // logged. Use dedupe so reloads don't double-fire identical events.
+  fireEvent(eventName, props, { dedupe: true }).catch(() => {});
 
   // Optional: if you later add your own PostHog, call it here, e.g.:
   // if (window.posthog) window.posthog.capture(eventName, payload);

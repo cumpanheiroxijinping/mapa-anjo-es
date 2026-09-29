@@ -12,7 +12,14 @@
 <script setup>
 import { config } from '../config.js';
 import { appendUtm } from '../composables/useUtm.js';
+import { fireEvent } from '../composables/useEvent.js';
+
+// offer_id is passed via route query (?offer=up1) when present.
+import { useRoute } from 'vue-router';
+const route = useRoute();
 function goCheckout() {
+  const offerId = route.query.offer || 'up1';
+  fireEvent('upsell_cta_clicked', { offer_id: offerId }, { dedupe: false }).catch(() => {});
   window.location.href = appendUtm(config.CHECKOUT_URL);
 }
 </script>
