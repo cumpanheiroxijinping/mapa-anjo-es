@@ -549,22 +549,22 @@ export async function updateContactState(email, patch = {}) {
 
   // Merge JSONB arrays for tags / lists.
   if (Array.isArray(patch.tagsToAdd) && patch.tagsToAdd.length) {
-    sets.push(`tags = (tags || $$${n}::jsonb)::jsonb`);
+    sets.push(`tags = (tags || $${n}::jsonb)::jsonb`);
     params.push(JSON.stringify(patch.tagsToAdd));
     n++;
   }
   if (Array.isArray(patch.tagsToRemove) && patch.tagsToRemove.length) {
-    sets.push(`tags = (tags - $$${n}::jsonb)::jsonb`);
+    sets.push(`tags = (tags - $${n}::jsonb)::jsonb`);
     params.push(JSON.stringify(patch.tagsToRemove));
     n++;
   }
   if (Array.isArray(patch.listsToAdd) && patch.listsToAdd.length) {
-    sets.push(`lists = (lists || $$${n}::jsonb)::jsonb`);
+    sets.push(`lists = (lists || $${n}::jsonb)::jsonb`);
     params.push(JSON.stringify(patch.listsToAdd));
     n++;
   }
   if (Array.isArray(patch.listsToRemove) && patch.listsToRemove.length) {
-    sets.push(`lists = (lists - $$${n}::jsonb)::jsonb`);
+    sets.push(`lists = (lists - $${n}::jsonb)::jsonb`);
     params.push(JSON.stringify(patch.listsToRemove));
     n++;
   }
