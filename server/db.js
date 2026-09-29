@@ -145,7 +145,7 @@ CREATE INDEX IF NOT EXISTS idx_cs_unsub ON contact_states(unsubscribe_at);
 const CREATE_FUNNEL_EVENTS_TABLE = `
 CREATE TABLE IF NOT EXISTS funnel_events (
   id           BIGSERIAL PRIMARY KEY,
-  event_id     UUID UNIQUE NOT NULL,        -- idempotency key (spec §15)
+  event_id     TEXT UNIQUE NOT NULL,        -- idempotency key (spec §15); any unique string
   email        TEXT NOT NULL,
   event_name   TEXT NOT NULL,
   funnel_name  TEXT NOT NULL DEFAULT 'angel_guarda',
@@ -235,6 +235,21 @@ export async function initDb() {
   await p.query(CREATE_AUTOMATION_INSTANCES_TABLE);
   await p.query(CREATE_PENDING_SENDS_TABLE);
   await p.query(CREATE_POSTBACK_LOG_TABLE);
+  // Normalize funnel_events.event_id to TEXT (was UUID). Allows any unique
+  // idempotency string (spec §15) — e.g. postback "CODE_STATUS" composites.
+  await p.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='funnel_events' AND column_name='event_id'
+          AND data_type='uuid'
+      ) THEN
+        ALTER TABLE funnel_events
+          ALTER COLUMN event_id TYPE text USING event_id::text;
+      END IF;
+    END $$;
+  `).catch((e) => console.warn('[db] event_id migration skipped:', e.message));
   console.log('[db] leads + email + automation tables ready');
 }
 
