@@ -9,6 +9,7 @@ import trackingRouter from './routes/tracking.js';
 import brevoWebhookRouter from './routes/brevo-webhook.js';
 import eventRouter from './routes/event.js';
 import perfectPayRouter from './routes/perfectpay-webhook.js';
+import monitorRouter from './routes/monitor.js';
 import { initDb } from './db.js';
 import { startEmailScheduler } from './services/email-campaign.js';
 import { startAutomationEngine } from './services/automation-engine.js';
@@ -26,6 +27,7 @@ app.use('/api/email', emailRouter);
 app.use('/api/brevo/webhook', brevoWebhookRouter);
 app.use('/api/event', eventRouter);
 app.use('/api/postback', perfectPayRouter);
+app.use('/api/monitor', monitorRouter);
 
 // --- Self-hosted email tracking (pixel + click redirect) ---
 // Public routes, served off the public TRACKING_BASE_URL. Registered before the

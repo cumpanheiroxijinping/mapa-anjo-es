@@ -23,9 +23,16 @@
         <button class="ghost" @click="logout">Salir</button>
       </header>
 
+      <div class="tabs">
+        <button :class="{ active: tab === 'email' }" @click="tab = 'email'">Email</button>
+        <button :class="{ active: tab === 'recovery' }" @click="switchTab('recovery')">Recuperación</button>
+      </div>
+
       <p v-if="error" class="err">{{ error }}</p>
       <p v-if="loading" class="muted">Cargando…</p>
 
+      <!-- Email tab -->
+      <div v-if="tab === 'email'">
       <!-- Summary cards -->
       <section v-if="summary" class="cards">
         <div class="card"><span class="label">Enviados</span><b>{{ summary.total_sent }}</b></div>
@@ -129,24 +136,132 @@
           </table>
         </div>
       </div>
+      </div>
+
+      <!-- Recovery tab -->
+      <div v-else-if="tab === 'recovery'">
+        <h2>Recuperación — fila activa</h2>
+        <div v-if="recoveryQueue.length === 0" class="muted">Sin recuperaciones activas.</div>
+        <table v-else class="events">
+          <thead>
+            <tr><th>Email</th><th>Auto</th><th>Pendientes</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(r, i) in recoveryQueue" :key="i">
+              <td>{{ r.email }}</td>
+              <td><span class="tag">{{ r.automation_key }}</span></td>
+              <td>
+                <span v-for="(p, j) in r.pending" :key="j" class="tag">
+                  {{ p.template }} · {{ fmt(p.send_at) }} · {{ p.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Postbacks recientes</h2>
+        <div v-if="postbacks.length === 0" class="muted">Sin postbacks.</div>
+        <table v-else class="events">
+          <thead>
+            <tr><th>Code</th><th>Email</th><th>Status</th><th>Evento</th><th>Cuándo</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(p, i) in postbacks" :key="i">
+              <td>{{ p.code }}</td>
+              <td>{{ p.email }}</td>
+              <td><span class="tag" :class="p.status">{{ p.status }}</span></td>
+              <td>{{ p.mapped_event }}</td>
+              <td class="muted">{{ fmt(p.processed_at) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Buscar leads</h2>
+        <div class="form">
+          <label>Funnel stage<input v-model="leadFilter.funnel_stage" placeholder="CHECKOUT_NO_DATA" /></label>
+          <label>Main status<input v-model="leadFilter.main_product_status" placeholder="paid" /></label>
+          <label>Tag<input v-model="leadFilter.tag" placeholder="PAYMENT_FAILED" /></label>
+          <label>Buscar email<input v-model="leadFilter.search" placeholder="@dominio" /></label>
+          <div class="form-actions">
+            <button type="button" @click="searchLeads">Buscar</button>
+          </div>
+        </div>
+        <div v-if="monitorLeads.length" class="muted">{{ monitorLeads.length }} lead(s)</div>
+        <table v-if="monitorLeads.length" class="events">
+          <thead>
+            <tr><th>Email</th><th>Stage</th><th>Status</th><th>Challenge</th><th>Supp</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="(l, i) in monitorLeads" :key="i">
+              <td>{{ l.email }}</td>
+              <td>{{ l.funnel_stage }}</td>
+              <td>{{ l.main_product_status }}</td>
+              <td>{{ l.primary_challenge || '-' }}</td>
+              <td>{{ l.suppression_recovery ? 'R' : '' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Disparar por evento</h2>
+        <div class="form">
+          <label>Modo
+            <select v-model="triggerForm.mode">
+              <option value="reapply">Reaplicar evento (reinicia F/G)</option>
+              <option value="resend">Reenviar template</option>
+            </select>
+          </label>
+          <template v-if="triggerForm.mode === 'reapply'">
+            <label>Evento
+              <select v-model="triggerForm.event">
+                <option value="abandonment">abandonment → F</option>
+                <option value="rejected">rejected → G</option>
+                <option value="canceled">canceled → G</option>
+              </select>
+            </label>
+            <label>Segmento
+              <select v-model="triggerForm.segment">
+                <option value="todos">Todos los leads</option>
+                <option value="tag">Solo tag</option>
+              </select>
+            </label>
+            <label v-if="triggerForm.segment === 'tag'">Tag<input v-model="triggerForm.tag" placeholder="PAYMENT_FAILED" /></label>
+          </template>
+          <template v-else>
+            <label>Tag<input v-model="triggerForm.tag" placeholder="PAYMENT_FAILED" /></label>
+            <label>Template<input v-model="triggerForm.template" placeholder="payment_failed_1" /></label>
+          </template>
+          <div class="form-actions">
+            <button type="button" @click="runTrigger">Disparar</button>
+          </div>
+          <p v-if="triggerMsg" class="muted">{{ triggerMsg }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue';
-import { api, getToken, setToken } from '../composables/useApi.js';
+import { api, monitorApi, getToken, setToken } from '../composables/useApi.js';
 
 const authed = ref(!!getToken());
 const tokenInput = ref('');
 const gateError = ref('');
 
+const tab = ref('email');
 const loading = ref(false);
 const error = ref('');
 const summary = ref(null);
 const campaignMetrics = ref([]);
 const events = ref([]);
 const templates = ref([]);
+
+const recoveryQueue = ref([]);
+const postbacks = ref([]);
+const monitorLeads = ref([]);
+const leadFilter = reactive({ funnel_stage: '', main_product_status: '', tag: '', search: '' });
+const triggerForm = reactive({ mode: 'reapply', event: 'abandonment', segment: 'todos', tag: '', template: '' });
+const triggerMsg = ref('');
 
 const form = reactive({
   name: '',
@@ -256,6 +371,53 @@ function fmt(ts) {
   return d.toLocaleString();
 }
 
+async function switchTab(t) {
+  tab.value = t;
+  if (t === 'recovery') await loadMonitor();
+}
+
+async function loadMonitor() {
+  loading.value = true;
+  error.value = '';
+  try {
+    const [r, p] = await Promise.all([monitorApi.recovery(), monitorApi.postbacks()]);
+    recoveryQueue.value = r.queue;
+    postbacks.value = p.postbacks;
+  } catch (e) {
+    if (e.code === 401) { logout(); gateError.value = 'Token inválido'; }
+    else error.value = e.message;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function searchLeads() {
+  error.value = '';
+  try {
+    const params = new URLSearchParams();
+    if (leadFilter.funnel_stage) params.set('funnel_stage', leadFilter.funnel_stage);
+    if (leadFilter.main_product_status) params.set('main_product_status', leadFilter.main_product_status);
+    if (leadFilter.tag) params.set('tag', leadFilter.tag);
+    if (leadFilter.search) params.set('search', leadFilter.search);
+    const r = await monitorApi.leads('?' + params.toString());
+    monitorLeads.value = r.leads;
+  } catch (e) {
+    error.value = e.message;
+  }
+}
+
+async function runTrigger() {
+  triggerMsg.value = '';
+  try {
+    const payload = { ...triggerForm };
+    if (payload.segment === 'todos') delete payload.tag;
+    const res = await monitorApi.triggerEvent(payload);
+    triggerMsg.value = `${res.targets} lead(s) en cola (${res.mode}). Procesando en segundo plano.`;
+  } catch (e) {
+    triggerMsg.value = 'Error: ' + e.message;
+  }
+}
+
 onMounted(() => {
   if (authed.value) loadAll();
 });
@@ -268,6 +430,9 @@ onMounted(() => {
 .gate-card input { width: 100%; padding: 10px; margin: 12px 0; border-radius: 8px; border: 1px solid #2a3350; background: #0b1020; color: #fff; }
 .gate-card button { width: 100%; padding: 10px; border: 0; border-radius: 8px; background: #f4d58d; color: #0b1020; font-weight: 700; cursor: pointer; }
 .content { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.tabs { display: flex; gap: 8px; margin: 16px 0; }
+.tabs button { padding: 8px 16px; border: 1px solid #2a3350; background: #121a33; color: #cdd3e6; border-radius: 8px; cursor: pointer; font-size: 14px; }
+.tabs button.active { background: #f4d58d; color: #0b1020; font-weight: 700; border-color: #f4d58d; }
 .topbar { display: flex; justify-content: space-between; align-items: center; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
 .card { background: #121a33; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }

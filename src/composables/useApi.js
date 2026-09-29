@@ -51,3 +51,36 @@ export const api = {
   recentEvents: (limit = 50) => req('GET', `/metrics/recent-events?limit=${limit}`),
   daily: (days = 30) => req('GET', `/metrics/daily?days=${days}`),
 };
+
+// Same client, targeting /api/monitor (lead & recovery monitoring).
+async function monitorReq(method, path, body) {
+  const token = getToken();
+  const headers = { Authorization: `Bearer ${token}` };
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const res = await fetch(`/api/monitor${path}`, {
+    method,
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 401) {
+    const err = new Error('unauthorized');
+    err.code = 401;
+    throw err;
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || data.error || 'request_failed');
+    err.code = res.status;
+    throw err;
+  }
+  return data;
+}
+
+export const monitorApi = {
+  leads: (params = '') => monitorReq('GET', `/leads${params}`),
+  recovery: (keys = 'F,G,C,D,E') => monitorReq('GET', `/recovery?keys=${encodeURIComponent(keys)}`),
+  postbacks: (params = '') => monitorReq('GET', `/postbacks${params}`),
+  funnelEvents: (params = '') => monitorReq('GET', `/funnel-events${params}`),
+  triggerEvent: (payload) => monitorReq('POST', '/trigger-event', payload),
+};
+

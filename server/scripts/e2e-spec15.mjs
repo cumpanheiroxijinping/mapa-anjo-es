@@ -240,6 +240,63 @@ async function run() {
     }
   }
 
+  // 15. Monitoramento (novos endpoints /api/monitor/*)
+  console.log('15. Monitoramento de leads & recuperação');
+  {
+    const monitorGet = async (path) => {
+      const res = await fetch(`${APP}/api/monitor${path}`, {
+        headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
+      });
+      return { status: res.status, json: await res.json().catch(() => ({})) };
+    };
+    const monitorTrigger = async (payload) => {
+      const res = await fetch(`${APP}/api/monitor/trigger-event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ADMIN_TOKEN}` },
+        body: JSON.stringify(payload),
+      });
+      return { status: res.status, json: await res.json().catch(() => ({})) };
+    };
+
+    // auth gate
+    const noAuth = await fetch(`${APP}/api/monitor/leads`);
+    assert(noAuth.status === 401 || noAuth.status === 503, 'monitor requires admin token (401/503)');
+
+    // leads filtered list
+    const leads = await monitorGet('/leads?limit=5');
+    assert(leads.status === 200 && Array.isArray(leads.json.leads), 'leads list returns array');
+
+    // recovery queue
+    const rec = await monitorGet('/recovery');
+    assert(rec.status === 200 && Array.isArray(rec.json.queue), 'recovery queue returns array');
+
+    // funnel-events for a known lead
+    const fe = await monitorGet(`/funnel-events?email=${encodeURIComponent(mk('dup'))}`);
+    assert(fe.status === 200 && Array.isArray(fe.json.events), 'funnel-events returns array');
+
+    // postbacks log (after the rejected postback in scenario 5)
+    const pb = await monitorGet('/postbacks?limit=20');
+    assert(pb.status === 200 && Array.isArray(pb.json.postbacks), 'postbacks returns array');
+    const hasPaymentFailed = pb.json.postbacks.some((p) => p.mapped_event === 'payment_failed');
+    assert(hasPaymentFailed, 'postback log shows payment_failed event');
+
+    // trigger-event reapply (async -> 202)
+    const reapply = await monitorTrigger({
+      mode: 'reapply', event: 'abandonment', segment: 'tag', tag: 'LEADS_VSL1',
+    });
+    assert(reapply.status === 202 && reapply.json.targets >= 0, 'trigger reapply accepted (202)');
+
+    // trigger-event resend (async -> 202)
+    const resend = await monitorTrigger({
+      mode: 'resend', tag: 'PAYMENT_FAILED', template: 'payment_failed_1',
+    });
+    assert(resend.status === 202 && resend.json.targets >= 0, 'trigger resend accepted (202)');
+
+    // invalid mode rejected
+    const bad = await monitorTrigger({ mode: 'nope' });
+    assert(bad.status === 400, 'invalid trigger mode rejected (400)');
+  }
+
   console.log(`\n=== Result: ${pass} passed, ${fail} failed ===\n`);
   process.exit(fail ? 1 : 0);
 }

@@ -779,3 +779,123 @@ export async function insertPostbackLog({ code, email, rawPayload, status, mappe
   );
   return { inserted: !prev, statusChanged, row: prev || null };
 }
+
+// ============================================================ Monitoring reads
+
+/**
+ * List contact_states with optional filters + pagination.
+ * Returns { rows, total }.
+ */
+export async function listContactStates({
+  funnel_stage, main_product_status, suppression_recovery,
+  primary_challenge, tag, search, limit = 50, offset = 0,
+} = {}) {
+  const where = [];
+  const params = [];
+  let n = 1;
+  if (funnel_stage)        { where.push(`funnel_stage = $${n++}`); params.push(funnel_stage); }
+  if (main_product_status) { where.push(`main_product_status = $${n++}`); params.push(main_product_status); }
+  if (suppression_recovery !== undefined && suppression_recovery !== null) {
+    where.push(`suppression_recovery = $${n++}`); params.push(Boolean(suppression_recovery));
+  }
+  if (primary_challenge)   { where.push(`primary_challenge = $${n++}`); params.push(primary_challenge); }
+  if (tag)                 { where.push(`tags @> $${n++}::jsonb`); params.push(JSON.stringify([tag])); }
+  if (search)              { where.push(`email ILIKE $${n++}`); params.push(`%${search}%`); }
+
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const p = getPool();
+  const rows = await p.query(
+    `SELECT ${CONTACT_STATE_COLUMNS}
+     FROM contact_states ${clause}
+     ORDER BY updated_at DESC
+     LIMIT $${n++} OFFSET $${n++}`,
+    [...params, limit, offset]
+  );
+  const totalRes = await p.query(`SELECT count(*)::int AS c FROM contact_states ${clause}`, params);
+  return { rows: rows.rows, total: totalRes.rows[0]?.c || 0 };
+}
+
+/**
+ * Recovery queue: leads with active automation instances (F/G/C/D/E...) and
+ * their pending sends. Returns an array of { email, automation_key, started_at, pending[] }.
+ */
+export async function getRecoveryQueue({
+  automationKeys = ['F', 'G', 'C', 'D', 'E'], limit = 50, offset = 0,
+} = {}) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT cs.email,
+            ai.automation_key,
+            ai.started_at,
+            COALESCE(json_agg(json_build_object(
+              'id', ps.id, 'template', ps.template,
+              'send_at', ps.send_at, 'status', ps.status, 'priority', ps.priority
+            ) ORDER BY ps.send_at ASC) FILTER (WHERE ps.id IS NOT NULL), '[]') AS pending
+     FROM contact_states cs
+     JOIN automation_instances ai ON ai.email = cs.email AND ai.status = 'active'
+     LEFT JOIN pending_sends ps ON ps.email = cs.email
+            AND ps.automation_key = ai.automation_key
+            AND ps.status = 'pending'
+     WHERE ai.automation_key = ANY($1)
+     GROUP BY cs.email, ai.automation_key, ai.started_at
+     ORDER BY cs.email, ai.automation_key
+     LIMIT $2 OFFSET $3`,
+    [automationKeys, limit, offset]
+  );
+  return res.rows;
+}
+
+/**
+ * List Perfect Pay postback logs (most recent first).
+ */
+export async function listPostbackLogs({ limit = 50, offset = 0 } = {}) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT code, email, status, mapped_event, processed_at, raw_payload
+     FROM postback_log
+     ORDER BY processed_at DESC NULLS LAST
+     LIMIT $1 OFFSET $2`,
+    [limit, offset]
+  );
+  return res.rows;
+}
+
+/**
+ * List funnel events with optional email/date-range filters.
+ */
+export async function listFunnelEvents({
+  email, from, to, limit = 50, offset = 0,
+} = {}) {
+  const where = [];
+  const params = [];
+  let n = 1;
+  if (email) { where.push(`email = $${n++}`); params.push(email.toLowerCase()); }
+  if (from)  { where.push(`occurred_at >= $${n++}`); params.push(from); }
+  if (to)    { where.push(`occurred_at <= $${n++}`); params.push(to); }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const p = getPool();
+  const res = await p.query(
+    `SELECT event_id, email, event_name, funnel_name, occurred_at, metadata
+     FROM funnel_events ${clause}
+     ORDER BY occurred_at DESC
+     LIMIT $${n++} OFFSET $${n++}`,
+    [...params, limit, offset]
+  );
+  return res.rows;
+}
+
+/**
+ * Lightweight email list for bulk jobs. Optionally filtered by a tag (JSONB).
+ */
+export async function listContactEmails({ tag } = {}) {
+  const p = getPool();
+  if (tag) {
+    const res = await p.query(
+      `SELECT email FROM contact_states WHERE tags @> $1::jsonb`,
+      [JSON.stringify([tag])]
+    );
+    return res.rows.map((r) => r.email);
+  }
+  const res = await p.query(`SELECT email FROM contact_states`);
+  return res.rows.map((r) => r.email);
+}
