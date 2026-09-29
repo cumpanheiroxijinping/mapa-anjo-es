@@ -547,36 +547,32 @@ export async function updateContactState(email, patch = {}) {
     }
   }
 
-  // Merge JSONB arrays for tags / lists.
-  if (Array.isArray(patch.tagsToAdd) && patch.tagsToAdd.length) {
-    sets.push(`tags = (tags || $${n}::jsonb)::jsonb`);
-    params.push(JSON.stringify(patch.tagsToAdd));
-    n++;
-  }
-  if (Array.isArray(patch.tagsToRemove) && patch.tagsToRemove.length) {
-    // Postgres has no `jsonb - jsonb`. Remove each array element by value via
-    // chaining `jsonb - text` (text = the array element string).
-    const exprs = [];
-    for (const t of patch.tagsToRemove) {
-      exprs.push(`$${(n++).toString()}`);
-      params.push(String(t));
+  // Merge JSONB arrays for tags / lists. Both add and remove must be combined
+  // into a SINGLE assignment per column (Postgres rejects multiple assignments
+  // to the same column in one UPDATE). Postgres has no `jsonb - jsonb`, so
+  // removals use chaining `jsonb - text` (text = the array element string).
+  const buildJsonbSet = (column, toAdd, toRemove) => {
+    if ((!Array.isArray(toAdd) || !toAdd.length) && (!Array.isArray(toRemove) || !toRemove.length)) {
+      return;
     }
-    sets.push(`tags = (tags${exprs.map((e) => ` - ${e}`).join('')})::jsonb`);
-  }
-  if (Array.isArray(patch.listsToAdd) && patch.listsToAdd.length) {
-    sets.push(`lists = (lists || $${n}::jsonb)::jsonb`);
-    params.push(JSON.stringify(patch.listsToAdd));
-    n++;
-  }
-  if (Array.isArray(patch.listsToRemove) && patch.listsToRemove.length) {
-    // Same portability fix as tagsToRemove (jsonb - text chaining).
-    const exprs = [];
-    for (const l of patch.listsToRemove) {
-      exprs.push(`$${(n++).toString()}`);
-      params.push(String(l));
+    let expr = column;
+    if (Array.isArray(toAdd) && toAdd.length) {
+      expr = `(${expr} || $${n}::jsonb)`;
+      params.push(JSON.stringify(toAdd));
+      n++;
     }
-    sets.push(`lists = (lists${exprs.map((e) => ` - ${e}`).join('')})::jsonb`);
-  }
+    if (Array.isArray(toRemove) && toRemove.length) {
+      for (const v of toRemove) {
+        expr = `(${expr} - $${n})`;
+        params.push(String(v));
+        n++;
+      }
+    }
+    sets.push(`${column} = ${expr}::jsonb`);
+  };
+
+  buildJsonbSet('tags', patch.tagsToAdd, patch.tagsToRemove);
+  buildJsonbSet('lists', patch.listsToAdd, patch.listsToRemove);
 
   if (!sets.length) return;
   sets.push(`updated_at = now()`);
