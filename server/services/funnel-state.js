@@ -79,6 +79,14 @@ export function applyEvent(stateRow, event) {
         // Treat email submission as consent for marketing automation.
         out.statePatch.consent_email_at = event.occurred_at || nowIso;
       }
+      // Persist the lead's primary challenge so later recovery automations
+      // (F/G/...) can resolve the per-challenge template variant. The frontend
+      // sends it as metadata.challenge (maps to leads.life_challenge).
+      {
+        const ch = (meta.challenge || '').toString().toLowerCase();
+        const VALID = ['love', 'finance', 'health', 'happiness'];
+        if (VALID.includes(ch)) out.statePatch.primary_challenge = ch;
+      }
       break;
 
     // ---- VSL2 -----------------------------------------------------------
