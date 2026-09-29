@@ -554,9 +554,14 @@ export async function updateContactState(email, patch = {}) {
     n++;
   }
   if (Array.isArray(patch.tagsToRemove) && patch.tagsToRemove.length) {
-    sets.push(`tags = (tags - $${n}::jsonb)::jsonb`);
-    params.push(JSON.stringify(patch.tagsToRemove));
-    n++;
+    // Postgres has no `jsonb - jsonb`. Remove each array element by value via
+    // chaining `jsonb - text` (text = the array element string).
+    const exprs = [];
+    for (const t of patch.tagsToRemove) {
+      exprs.push(`$${(n++).toString()}`);
+      params.push(String(t));
+    }
+    sets.push(`tags = (tags${exprs.map((e) => ` - ${e}`).join('')})::jsonb`);
   }
   if (Array.isArray(patch.listsToAdd) && patch.listsToAdd.length) {
     sets.push(`lists = (lists || $${n}::jsonb)::jsonb`);
@@ -564,9 +569,13 @@ export async function updateContactState(email, patch = {}) {
     n++;
   }
   if (Array.isArray(patch.listsToRemove) && patch.listsToRemove.length) {
-    sets.push(`lists = (lists - $${n}::jsonb)::jsonb`);
-    params.push(JSON.stringify(patch.listsToRemove));
-    n++;
+    // Same portability fix as tagsToRemove (jsonb - text chaining).
+    const exprs = [];
+    for (const l of patch.listsToRemove) {
+      exprs.push(`$${(n++).toString()}`);
+      params.push(String(l));
+    }
+    sets.push(`lists = (lists${exprs.map((e) => ` - ${e}`).join('')})::jsonb`);
   }
 
   if (!sets.length) return;
