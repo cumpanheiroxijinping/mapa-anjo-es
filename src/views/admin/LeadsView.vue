@@ -1,5 +1,8 @@
 <template>
   <div>
+    <label style="font-size: 12px; color: var(--text-dim); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; margin-bottom: 12px;">
+      <input type="checkbox" v-model="includeTest" @change="load" /> Mostrar leads de teste (ex.: @test.com)
+    </label>
     <div class="filter-bar">
       <div class="field">Buscar email<input v-model="filters.search" @keyup.enter="load" placeholder="email@dominio" /></div>
       <div class="field">Funnel stage
@@ -106,6 +109,7 @@ const page = ref(1);
 const limit = 50;
 const error = ref('');
 const detail = ref(null);
+const includeTest = ref(false);
 
 function statusVariant(s) {
   if (['paid'].includes(s)) return 'green';
@@ -123,6 +127,7 @@ function buildParams() {
   if (filters.main_product_status) p.set('main_product_status', filters.main_product_status);
   if (filters.primary_challenge) p.set('primary_challenge', filters.primary_challenge);
   if (filters.tag) p.set('tag', filters.tag);
+  if (includeTest.value) p.set('includeTest', '1');
   return '?' + p.toString();
 }
 

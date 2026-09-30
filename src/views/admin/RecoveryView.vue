@@ -2,7 +2,11 @@
   <div>
     <p v-if="error" class="err">{{ error }}</p>
 
-    <h2 class="section-title">Recuperación — fila activa</h2>
+    <h2 class="section-title">Recuperación — fila activa
+      <label style="float: right; font-size: 12px; color: var(--text-dim); font-weight: 400; cursor: pointer;">
+        <input type="checkbox" v-model="includeTest" @change="load" /> Mostrar testes
+      </label>
+    </h2>
     <DataTable :columns="recCols" :rows="recoveryQueue" :rowKey="'email'" emptyText="Sin recuperaciones activas.">
       <template #cell-pending="{ row }">
         <span v-for="(p, j) in (row.pending || [])" :key="j" class="badge" style="margin-right: 6px;">
@@ -69,6 +73,8 @@ import DataTable from '../../components/admin/DataTable.vue';
 import Badge from '../../components/admin/Badge.vue';
 import { monitorApi } from '../../composables/useApi.js';
 
+const includeTest = ref(false);
+
 const recCols = [
   { key: 'email', label: 'Email', mono: true },
   { key: 'automation_key', label: 'Auto' },
@@ -108,7 +114,8 @@ function fmt(ts) { return ts ? new Date(ts).toLocaleString() : ''; }
 async function load() {
   error.value = '';
   try {
-    const [r, p] = await Promise.all([monitorApi.recovery(), monitorApi.postbacks()]);
+    const q = includeTest.value ? '?includeTest=1' : '';
+    const [r, p] = await Promise.all([monitorApi.recovery(q), monitorApi.postbacks(q)]);
     recoveryQueue.value = r.queue || [];
     postbacks.value = p.postbacks || [];
   } catch (e) {

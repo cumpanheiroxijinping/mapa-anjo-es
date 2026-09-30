@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
       primary_challenge: q.primary_challenge || undefined,
       tag: q.tag || undefined,
       search: q.search || undefined,
+      excludeTest: !q.includeTest,
       limit, offset,
     });
     res.json({ ok: true, total, limit, offset, leads: rows });

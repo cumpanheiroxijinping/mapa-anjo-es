@@ -52,12 +52,12 @@ router.get('/leads', async (req, res) => {
   }
 });
 
-// GET /api/monitor/recovery?keys=F,G,C,D,E
+// GET /api/monitor/recovery?keys=F,G,C,D,E&includeTest=1
 router.get('/recovery', async (req, res) => {
   try {
     const keys = (req.query.keys || 'F,G,C,D,E')
       .split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
-    const queue = await getRecoveryQueue({ automationKeys: keys });
+    const queue = await getRecoveryQueue({ automationKeys: keys, excludeTest: !req.query.includeTest });
     res.json({ ok: true, queue });
   } catch (err) {
     console.error('[monitor] recovery error', err);
@@ -65,12 +65,12 @@ router.get('/recovery', async (req, res) => {
   }
 });
 
-// GET /api/monitor/postbacks?limit=&offset=
+// GET /api/monitor/postbacks?limit=&offset=&includeTest=1
 router.get('/postbacks', async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 50, 500);
     const offset = Math.max(Number(req.query.offset) || 0, 0);
-    const postbacks = await listPostbackLogs({ limit, offset });
+    const postbacks = await listPostbackLogs({ excludeTest: !req.query.includeTest, limit, offset });
     res.json({ ok: true, postbacks });
   } catch (err) {
     console.error('[monitor] postbacks error', err);

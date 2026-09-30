@@ -823,7 +823,7 @@ export async function insertPostbackLog({ code, email, rawPayload, status, mappe
  */
 export async function listContactStates({
   funnel_stage, main_product_status, suppression_recovery,
-  primary_challenge, tag, search, limit = 50, offset = 0,
+  primary_challenge, tag, search, excludeTest = true, limit = 50, offset = 0,
 } = {}) {
   const where = [];
   const params = [];
@@ -836,6 +836,7 @@ export async function listContactStates({
   if (primary_challenge)   { where.push(`primary_challenge = $${n++}`); params.push(primary_challenge); }
   if (tag)                 { where.push(`tags @> $${n++}::jsonb`); params.push(JSON.stringify([tag])); }
   if (search)              { where.push(`email ILIKE $${n++}`); params.push(`%${search}%`); }
+  if (excludeTest)         { where.push(`email NOT ILIKE '%@test.com' AND email NOT ILIKE '%@exemplo.com' AND email NOT ILIKE '%@test.%'`); }
 
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const p = getPool();
@@ -855,9 +856,12 @@ export async function listContactStates({
  * their pending sends. Returns an array of { email, automation_key, started_at, pending[] }.
  */
 export async function getRecoveryQueue({
-  automationKeys = ['F', 'G', 'C', 'D', 'E'], limit = 50, offset = 0,
+  automationKeys = ['F', 'G', 'C', 'D', 'E'], excludeTest = true, limit = 50, offset = 0,
 } = {}) {
   const p = getPool();
+  const testClause = excludeTest
+    ? ` AND cs.email NOT ILIKE '%@test.com' AND cs.email NOT ILIKE '%@exemplo.com' AND cs.email NOT ILIKE '%@test.%'`
+    : '';
   const res = await p.query(
     `SELECT cs.email,
             ai.automation_key,
@@ -871,7 +875,7 @@ export async function getRecoveryQueue({
      LEFT JOIN pending_sends ps ON ps.email = cs.email
             AND ps.automation_key = ai.automation_key
             AND ps.status = 'pending'
-     WHERE ai.automation_key = ANY($1)
+     WHERE ai.automation_key = ANY($1)${testClause}
      GROUP BY cs.email, ai.automation_key, ai.started_at
      ORDER BY cs.email, ai.automation_key
      LIMIT $2 OFFSET $3`,
@@ -883,11 +887,14 @@ export async function getRecoveryQueue({
 /**
  * List Perfect Pay postback logs (most recent first).
  */
-export async function listPostbackLogs({ limit = 50, offset = 0 } = {}) {
+export async function listPostbackLogs({ excludeTest = true, limit = 50, offset = 0 } = {}) {
   const p = getPool();
+  const where = excludeTest
+    ? `WHERE email IS NULL OR (email NOT ILIKE '%@test.com' AND email NOT ILIKE '%@exemplo.com' AND email NOT ILIKE '%@test.%')`
+    : '';
   const res = await p.query(
     `SELECT code, email, status, mapped_event, processed_at, raw_payload
-     FROM postback_log
+     FROM postback_log ${where}
      ORDER BY processed_at DESC NULLS LAST
      LIMIT $1 OFFSET $2`,
     [limit, offset]
