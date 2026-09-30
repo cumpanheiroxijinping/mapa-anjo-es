@@ -44,6 +44,12 @@
       <template #cell-email="{ value }">
         <span class="mono">{{ value }}</span>
       </template>
+      <template #cell-birth="{ value }">
+        {{ formatBirth(value) }}
+      </template>
+      <template #cell-age="{ value }">
+        {{ value || '-' }}
+      </template>
       <template #cell-created_at="{ value }">
         {{ fmt(value) }}
       </template>
@@ -80,6 +86,40 @@ const signs = ['Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo', 'Libra',
 const challenges = ['love', 'finance', 'health', 'happiness'];
 const genders = ['femenino', 'masculino', 'outro'];
 
+// birth_day is stored as "M-D" (M = 0-based month index). Derive a readable
+// label and compute age from birth_year so the admin table can show them
+// without backend changes (listLeads already returns birth_day / birth_year).
+const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+function enrichLead(row) {
+  const enriched = { ...row };
+  if (row.birth_year) {
+    const yr = Number(row.birth_year);
+    if (Number.isFinite(yr)) {
+      enriched.age = String(new Date().getFullYear() - yr);
+    }
+  }
+  return enriched;
+}
+
+function formatBirth(row) {
+  if (!row) return '';
+  let day = '';
+  let month = '';
+  if (row.birth_day) {
+    const parts = String(row.birth_day).split('-');
+    const m = parseInt(parts[0], 10);
+    const d = parseInt(parts[1], 10);
+    if (Number.isFinite(m) && m >= 0 && m < 12) month = MONTH_NAMES_ES[m];
+    if (Number.isFinite(d)) day = String(d);
+  }
+  const parts = [day, month, row.birth_year].filter(Boolean);
+  return parts.length ? parts.join(' ') : '-';
+}
+
 const filters = reactive({ search: '', zodiac_sign: '', life_challenge: '', gender: '', utm_source: '' });
 const columns = [
   { key: 'first_name', label: 'Nombre' },
@@ -87,6 +127,8 @@ const columns = [
   { key: 'zodiac_sign', label: 'Signo' },
   { key: 'life_challenge', label: 'Desafío' },
   { key: 'gender', label: 'Género' },
+  { key: 'birth', label: 'Nacimiento' },
+  { key: 'age', label: 'Edad' },
   { key: 'utm_source', label: 'UTM' },
   { key: 'created_at', label: 'Criado' },
 ];
@@ -148,7 +190,7 @@ async function load() {
   error.value = '';
   try {
     const r = await leadsApi.list(buildParams());
-    leads.value = r.leads || [];
+    leads.value = (r.leads || []).map(enrichLead);
     total.value = r.total || 0;
   } catch (e) {
     if (e.code === 401) error.value = 'Sesión expirada.';
