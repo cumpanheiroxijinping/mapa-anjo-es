@@ -107,17 +107,36 @@ export function parseTemplateFile(filePath) {
 }
 
 /**
- * Substitute %KEY% variables in a string. Unknown keys left untouched so a
- * typo doesn't silently wipe content.
+ * Substitute %KEY% / %KEY|fallback% variables in a string.
+ *
+ * Syntax (see email-templates/angel_guarda/README_placeholders.md):
+ *   %KEY%            -> value of KEY if non-empty, else left untouched (so a
+ *                       typo / unknown key never silently wipes content).
+ *   %KEY|fallback%   -> value of KEY if non-empty, else the fallback text.
+ *
+ * This matches what the templates actually use (e.g. %FIRSTNAME|querida amiga%,
+ * %AGE|tu etapa actual%, %BIRTH_MONTH|un mes especial%).
+ *
  * @param {string} text
  * @param {Record<string,string>} vars
  */
-export function substituteVariables(text, vars) {
-  let out = text;
-  for (const [key, value] of Object.entries(vars)) {
-    out = out.split(`%${key}%`).join(value == null ? '' : String(value));
-  }
-  return out;
+export function substituteVariables(text, vars = {}) {
+  if (!text) return text;
+  return text.replace(/(%[A-Z_][A-Z0-9_]*(\|[^%]*)?%)/g, (match) => {
+    const inner = match.slice(1, -1); // strip surrounding %
+    const pipeIdx = inner.indexOf('|');
+    const key = (pipeIdx === -1 ? inner : inner.slice(0, pipeIdx)).trim();
+    const fallback = pipeIdx === -1 ? null : inner.slice(pipeIdx + 1);
+
+    const raw = vars[key];
+    const value = raw == null ? '' : String(raw).trim();
+    if (value) return value;
+
+    // No value: use fallback if provided, else leave the original token intact
+    // (so an unknown key with no fallback doesn't get erased).
+    if (fallback !== null) return fallback;
+    return match;
+  });
 }
 
 /**
@@ -197,6 +216,7 @@ export function leadToTemplateVars(lead = {}) {
     GENDER: (lead.gender || '').toString(),
     CIVIL_STATUS: (lead.civil_status || '').toString(),
     BIRTH_DAY: (lead.birth_day || '').toString(),
+    BIRTH_MONTH: birthMonth(lead.birth_day, lead.zodiac_sign),
     BIRTH_YEAR: (lead.birth_year || '').toString(),
     AGE: age,
     ZODIAC_SIGN: (lead.zodiac_sign || '').toString(),
@@ -233,6 +253,34 @@ function computeAge(birthYear) {
   const age = current - yr;
   if (age < 0 || age > 130) return '';
   return String(age);
+}
+
+// birth_day is stored as "M-D" where M is the 0-based month index (e.g. "3-21"
+// = April 21). Derive a human month name (es) for %BIRTH_MONTH%. If birth_day
+// is missing, fall back to an approximate month from the zodiac sign. Returns ''
+// when nothing can be derived (the template's own fallback then applies).
+const MONTH_NAMES_ES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+// Approximate representative month per sign (sign covers late-month + early-next).
+const SIGN_MONTH = {
+  aries: 'Abril', tauro: 'Mayo', gemeos: 'Junio', cancer: 'Julio',
+  leao: 'Agosto', virgem: 'Septiembre', libra: 'Octubre', escorpiao: 'Noviembre',
+  sagitario: 'Diciembre', capricornio: 'Enero', aquario: 'Febrero', peixes: 'Marzo',
+};
+
+function birthMonth(birthDay, zodiacSign) {
+  if (birthDay) {
+    const parts = String(birthDay).split('-');
+    const m = parseInt(parts[0], 10);
+    if (Number.isFinite(m) && m >= 0 && m < 12) return MONTH_NAMES_ES[m];
+  }
+  if (zodiacSign) {
+    const label = SIGN_MONTH[String(zodiacSign).toLowerCase()];
+    if (label) return label;
+  }
+  return '';
 }
 
 // Challenge code -> readable label (spec §11). Source field may be the raw
