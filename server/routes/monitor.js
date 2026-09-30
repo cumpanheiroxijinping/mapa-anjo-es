@@ -6,11 +6,9 @@ import { Router } from 'express';
 import {
   listContactStates, getRecoveryQueue, listPostbackLogs,
   listFunnelEvents, listContactEmails,
-  getActiveInstances, endAutomationInstance, cancelPendingByEmail, getContactState,
+  insertBulkJob,
+  countBulkJob,
 } from '../db.js';
-import { ingestEvent } from '../services/automation-engine.js';
-import { sendTemplateEmail } from '../services/email-sender.js';
-import { computeSendAt } from '../util/timezone.js';
 import { authenticateToken } from '../middleware.js';
 
 const router = Router();
@@ -100,6 +98,10 @@ router.get('/funnel-events', async (req, res) => {
 //  body: { mode: 'reapply'|'resend', event?, segment?, tag?, template? }
 //  - reapply: re-ingest an event for all leads in segment (restarts F/G).
 //  - resend:  re-send a stage template via Brevo for all leads with `tag`.
+//
+// Items are written to the persistent bulk_jobs table (not run in-memory), so a
+// container restart mid-run does not lose progress — the processor reclaims
+// anything left 'processing' or still 'pending'.
 router.post('/trigger-event', async (req, res) => {
   const body = req.body || {};
   const mode = body.mode;
@@ -121,71 +123,40 @@ router.post('/trigger-event', async (req, res) => {
     targets = await listContactEmails({ tag: body.tag });
   }
 
-  // Fire-and-forget (mirrors the postback handler pattern).
-  runBulkJob(mode, body, targets).catch((err) =>
-    console.error('[monitor] bulk job error', err)
-  );
+  if (!targets.length) {
+    return res.status(200).json({ ok: true, accepted: false, mode, targets: 0, message: 'no_targets' });
+  }
 
-  res.status(202).json({ ok: true, accepted: true, mode, targets: targets.length });
+  // Enqueue each target as a persistent job item.
+  const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const key = mode === 'reapply' ? EVENT_MAP[body.event]?.key : null;
+  for (const email of targets) {
+    if (!email) continue;
+    await insertBulkJob({
+      jobId,
+      mode,
+      event: mode === 'reapply' ? body.event : null,
+      automationKey: key,
+      template: mode === 'resend' ? body.template : null,
+      email,
+      payload: { segment: body.segment, tag: body.tag || null },
+    });
+  }
+
+  res.status(202).json({ ok: true, accepted: true, mode, jobId, targets: targets.length });
 });
 
-// ---------------------------------------------------------------- bulk job
-async function runBulkJob(mode, body, emails) {
-  const ts = Date.now();
-
-  if (mode === 'reapply') {
-    const { event_name, key } = EVENT_MAP[body.event];
-    for (const email of emails) {
-      try {
-        // End any active instance of this automation so evaluateTriggers can
-        // re-create it (upsert has ON CONFLICT ... WHERE status='active').
-        const active = await getActiveInstances(email);
-        const inst = active.find((a) => a.automation_key === key);
-        if (inst) {
-          await endAutomationInstance(inst.id, 'cancelled');
-          await cancelPendingByEmail(email, { onlyAutomationKey: key });
-        }
-        await ingestEvent({
-          event_name,
-          event_id: `monitor_reapply_${body.event}_${email}_${ts}`,
-          email,
-          funnel_name: process.env.FUNNEL_NAME || 'angel_guarda',
-          occurred_at: new Date().toISOString(),
-          page_url: '',
-          utm: {},
-          metadata: { source: 'monitor_reapply', segment: body.segment, tag: body.tag || null },
-        });
-      } catch (e) {
-        console.error(`[monitor] reapply failed for ${email}`, e.message);
-      }
-    }
-    return;
+// GET /api/monitor/trigger-event/:jobId — progress of a bulk job (counts by status).
+router.get('/trigger-event/:jobId', async (req, res) => {
+  try {
+    const counts = await countBulkJob(req.params.jobId);
+    const map = { pending: 0, processing: 0, done: 0, error: 0 };
+    for (const c of counts) map[c.status] = c.c;
+    res.json({ ok: true, jobId: req.params.jobId, counts: map, total: Object.values(map).reduce((a, b) => a + b, 0) });
+  } catch (err) {
+    console.error('[monitor] job progress error', err);
+    res.status(500).json({ ok: false, error: 'server_error' });
   }
-
-  // mode === 'resend' — send the stage template via Brevo, no automation restart.
-  for (const email of emails) {
-    try {
-      if (!EMAIL_RE.test(email)) continue;
-      const state = (await getContactState(email)) || { email };
-      // Respect the silent window: schedule if currently silent, else send now.
-      const sendAt = computeSendAt(new Date().toISOString(), 0, state.timezone || 'America/Mexico_City');
-      if (sendAt && new Date(sendAt) > new Date()) {
-        // Would land in the silent window — send immediately anyway per request,
-        // but log so operators know it bypassed the roll.
-        console.log(`[monitor] resend to ${email} bypassing silent-window roll`);
-      }
-      await sendTemplateEmail({
-        email,
-        template: body.template,
-        lead: state,
-        vars: { challenge: state.primary_challenge || '' },
-        tags: ['monitor_resend', body.tag],
-        params: { monitor_resend: true },
-      });
-    } catch (e) {
-      console.error(`[monitor] resend failed for ${email}`, e.message);
-    }
-  }
-}
+});
 
 export default router;

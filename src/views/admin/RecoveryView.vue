@@ -61,14 +61,19 @@
         <div class="field">Tag<input v-model="triggerForm.tag" placeholder="PAYMENT_FAILED" /></div>
         <div class="field">Template<input v-model="triggerForm.template" placeholder="payment_failed_1" /></div>
       </template>
-      <div class="field"><button class="btn primary" @click="runTrigger">Disparar</button></div>
+      <div class="field"><button class="btn primary" @click="runTrigger" :disabled="jobRunning">Disparar</button></div>
     </div>
     <p v-if="triggerMsg" class="muted">{{ triggerMsg }}</p>
+    <p v-if="jobProgress" class="muted">
+      Job: {{ jobProgress.done }} enviados / {{ jobProgress.total }} ·
+      <span v-if="jobRemaining > 0">processando… ({{ jobRemaining }} restantes)</span>
+      <span v-else>concluído</span>
+    </p>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import DataTable from '../../components/admin/DataTable.vue';
 import Badge from '../../components/admin/Badge.vue';
 import { monitorApi } from '../../composables/useApi.js';
@@ -102,6 +107,16 @@ const monitorLeads = ref([]);
 const leadFilter = reactive({ funnel_stage: '', main_product_status: '', tag: '', search: '' });
 const triggerForm = reactive({ mode: 'reapply', event: 'abandonment', segment: 'todos', tag: '', template: '' });
 const triggerMsg = ref('');
+const jobId = ref('');
+const jobProgress = ref(null);
+const jobPolling = ref(null);
+
+const jobRemaining = computed(() => {
+  if (!jobProgress.value) return 0;
+  const c = jobProgress.value.counts;
+  return (c.pending || 0) + (c.processing || 0);
+});
+const jobRunning = computed(() => jobPolling.value !== null);
 
 function statusVariant(s) {
   if (['approved'].includes(s)) return 'green';
@@ -139,13 +154,35 @@ async function searchLeads() {
 
 async function runTrigger() {
   triggerMsg.value = '';
+  jobProgress.value = null;
+  if (jobPolling.value) clearInterval(jobPolling.value);
   try {
     const payload = { ...triggerForm };
     if (payload.segment === 'todos') delete payload.tag;
     const res = await monitorApi.triggerEvent(payload);
+    jobId.value = res.jobId || '';
     triggerMsg.value = `${res.targets} lead(s) en cola (${res.mode}).`;
+    if (jobId.value) startJobPolling();
   } catch (e) { triggerMsg.value = 'Error: ' + e.message; }
 }
 
+// Poll the persistent job progress until everything is done/errored.
+function startJobPolling() {
+  if (jobPolling.value) clearInterval(jobPolling.value);
+  jobPolling.value = setInterval(async () => {
+    try {
+      const r = await monitorApi.triggerJob(jobId.value);
+      jobProgress.value = r;
+      if (jobRemaining.value === 0) {
+        clearInterval(jobPolling.value);
+        jobPolling.value = null;
+        // Refresh the recovery queue so new items show up.
+        load();
+      }
+    } catch (e) { /* keep polling; ignore transient errors */ }
+  }, 3000);
+}
+
 onMounted(load);
+onUnmounted(() => { if (jobPolling.value) clearInterval(jobPolling.value); });
 </script>

@@ -21,6 +21,8 @@ import {
   markPendingFailed,
   cancelPendingByEmail,
   insertFunnelEvent,
+  claimBulkJobs,
+  setBulkJobResult,
 } from '../db.js';
 import { applyEvent, automationPriority } from './funnel-state.js';
 import { sendTemplateEmail } from './email-sender.js';
@@ -257,6 +259,9 @@ async function tick() {
   if (running) return;
   running = true;
   try {
+    // Drain the persistent "Disparar" bulk queue first (cheap, no scheduling).
+    await processBulkQueue();
+    // Then drain due pending_sends (actual email sends).
     const due = await getDuePendingSends(BATCH_SIZE);
     for (const row of due) {
       try {
@@ -342,6 +347,70 @@ async function processPendingSend(row) {
 async function rescheduleSend(id, newSendAt) {
   const p = (await import('../db.js')).getPool();
   await p.query('UPDATE pending_sends SET send_at = $2 WHERE id = $1 AND status = $3', [id, newSendAt, 'pending']);
+}
+
+// ----------------------------------------------------- Bulk job (Disparar) queue
+// Process persistent bulk_jobs items (enqueued by /api/monitor/trigger-event).
+// Runs inside the same tick as pending_sends so a container restart mid-run
+// resumes automatically (items left 'processing' for >10min are reclaimed).
+
+const BULK_EVENT_MAP = {
+  abandonment: { event_name: 'checkout_abandoned', key: 'F' },
+  rejected: { event_name: 'payment_failed', key: 'G' },
+  canceled: { event_name: 'payment_failed', key: 'G' },
+};
+const BULK_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function processBulkItem(item) {
+  const email = (item.email || '').toString().toLowerCase();
+  try {
+    if (item.mode === 'reapply') {
+      const { event_name, key } = BULK_EVENT_MAP[item.event] || {};
+      if (!event_name) throw new Error('unknown_event');
+      const ts = Date.now();
+      const active = await getActiveInstances(email);
+      const inst = active.find((a) => a.automation_key === key);
+      if (inst) {
+        await endAutomationInstance(inst.id, 'cancelled');
+        await cancelPendingByEmail(email, { onlyAutomationKey: key });
+      }
+      await ingestEvent({
+        event_name,
+        event_id: `monitor_reapply_${item.event}_${email}_${ts}`,
+        email,
+        funnel_name: process.env.FUNNEL_NAME || 'angel_guarda',
+        occurred_at: new Date().toISOString(),
+        page_url: '',
+        utm: {},
+        metadata: { source: 'monitor_reapply', ...(item.payload || {}) },
+      });
+      return 'done';
+    }
+
+    // mode === 'resend'
+    if (!BULK_EMAIL_RE.test(email)) return 'done';
+    const state = (await getContactState(email)) || { email };
+    await sendTemplateEmail({
+      email,
+      template: item.template,
+      lead: state,
+      vars: { challenge: state.primary_challenge || '' },
+      tags: ['monitor_resend', ...((item.payload?.tag && [item.payload.tag]) || [])],
+      params: { monitor_resend: true },
+    });
+    return 'done';
+  } catch (e) {
+    console.error(`[automation] bulk item failed for ${email}:`, e.message);
+    return 'error';
+  }
+}
+
+async function processBulkQueue() {
+  const claimed = await claimBulkJobs(BATCH_SIZE);
+  for (const item of claimed) {
+    const status = await processBulkItem(item);
+    await setBulkJobResult(item.id, status, status === 'error' ? 'processing_failed' : null);
+  }
 }
 
 export function startAutomationEngine() {

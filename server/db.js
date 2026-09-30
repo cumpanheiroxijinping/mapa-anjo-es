@@ -250,6 +250,29 @@ CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
 CREATE INDEX IF NOT EXISTS idx_transactions_created ON transactions(created_at DESC);
 `;
 
+// Persistent bulk-job queue for the admin "Disparar" action. Items are stored
+// in the DB so a container restart mid-run does not lose work — the processor
+// reclaims any item left in 'processing' and resumes.
+const CREATE_BULK_JOBS_TABLE = `
+CREATE TABLE IF NOT EXISTS bulk_jobs (
+  id            BIGSERIAL PRIMARY KEY,
+  job_id        TEXT NOT NULL,
+  mode          TEXT NOT NULL,          -- reapply | resend
+  event         TEXT,                  -- for reapply (abandonment|rejected|canceled)
+  automation_key TEXT,                -- F | G (derived)
+  template      TEXT,                  -- for resend
+  email         TEXT NOT NULL,
+  payload       JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status        TEXT NOT NULL DEFAULT 'pending', -- pending|processing|done|error
+  attempts      INTEGER NOT NULL DEFAULT 0,
+  error         TEXT,
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  processed_at  TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_bulk_pending ON bulk_jobs(status) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_bulk_job ON bulk_jobs(job_id);
+`;
+
 export async function initDb() {
   const p = getPool();
   await p.query(CREATE_TABLE);
@@ -274,6 +297,7 @@ export async function initDb() {
   await p.query(CREATE_POSTBACK_LOG_TABLE);
   await p.query(CREATE_ADMIN_USERS_TABLE);
   await p.query(CREATE_TRANSACTIONS_TABLE);
+  await p.query(CREATE_BULK_JOBS_TABLE);
   // Normalize funnel_events.event_id to TEXT (was UUID). Allows any unique
   // idempotency string (spec §15) — e.g. postback "CODE_STATUS" composites.
   await p.query(`
@@ -1037,6 +1061,64 @@ export async function deleteAdminUser(id) {
   const p = getPool();
   const res = await p.query('DELETE FROM admin_users WHERE id = $1 RETURNING username, email', [id]);
   return res.rows[0] || null;
+}
+
+// ============================================================ Bulk jobs (persistent)
+
+/**
+ * Enqueue one bulk-job item. Returns the inserted row id.
+ * `jobId` groups a single "Disparar" action across all its targets.
+ */
+export async function insertBulkJob({ jobId, mode, event, automationKey, template, email, payload = {} }) {
+  const p = getPool();
+  const res = await p.query(
+    `INSERT INTO bulk_jobs (job_id, mode, event, automation_key, template, email, payload)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb) RETURNING id`,
+    [jobId, mode, event || null, automationKey || null, template || null,
+     (email || '').toString().toLowerCase(), JSON.stringify(payload || {})]
+  );
+  return res.rows[0]?.id || null;
+}
+
+/** Count pending + done items for a job group (for progress display). */
+export async function countBulkJob(jobId) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT status, COUNT(*)::int AS c FROM bulk_jobs WHERE job_id = $1 GROUP BY status`,
+    [jobId]
+  );
+  return res.rows;
+}
+
+/**
+ * Claim the next N pending items (or items stuck in 'processing' from a prior
+ * crash) and mark them 'processing' so they aren't picked up twice.
+ */
+export async function claimBulkJobs(limit = 50) {
+  const p = getPool();
+  const res = await p.query(
+    `UPDATE bulk_jobs
+     SET status = 'processing', attempts = attempts + 1, processed_at = now()
+     WHERE id IN (
+       SELECT id FROM bulk_jobs
+       WHERE status = 'pending'
+          OR (status = 'processing' AND processed_at < now() - interval '10 minutes')
+       ORDER BY id ASC
+       LIMIT $1
+     )
+     RETURNING *`,
+    [limit]
+  );
+  return res.rows;
+}
+
+/** Mark a bulk-job item done (or error). */
+export async function setBulkJobResult(id, status, error = null) {
+  const p = getPool();
+  await p.query(
+    `UPDATE bulk_jobs SET status = $2, error = $3, processed_at = now() WHERE id = $1`,
+    [id, status, error || null]
+  );
 }
 
 // ============================================================ Transactions

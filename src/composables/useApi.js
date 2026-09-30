@@ -74,4 +74,5 @@ export const monitorApi = {
   postbacks: (params = '') => monitorReq('GET', `/postbacks${params}`),
   funnelEvents: (params = '') => monitorReq('GET', `/funnel-events${params}`),
   triggerEvent: (payload) => monitorReq('POST', '/trigger-event', payload),
+  triggerJob: (jobId) => monitorReq('GET', `/trigger-event/${encodeURIComponent(jobId)}`),
 };

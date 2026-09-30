@@ -1,6 +1,6 @@
-Subject line: Tu garantía (si aplica)
-Preheader: Garantía
-From: Mapa del Ángel - hola@mapa-del-angel.com
+Subject line: Tu mapa está listo para ser reclamado
+Preheader: Una lectura profunda para comprender tu señal
+From: Mapa del Ángel - soporte@mail.timeoffaith.online
 
 <!DOCTYPE html>
 <html lang="es">
@@ -11,38 +11,18 @@ From: Mapa del Ángel - hola@mapa-del-angel.com
 </head>
 <body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center" style="padding:24px;">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
-          <tr>
-            <td style="padding:32px 28px;">
-              <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME% ✨</h1>
-              <p style="margin:0 0 16px;line-height:1.6;font-size:16px;">Tu corazón guarda residuos emocionales que merecen claridad. Este mensaje habla de relaciones que no permanecen y del miedo a quedarte con migajas.</p>
-              <p style="margin:0 0 16px;line-height:1.6;font-size:16px;">
-                Llegaste a la oferta de tu Mapa del Ángel de la Guarda (T+72 h),
-                pero parece que no iniciaste el pago. %PRIMARY_CHALLENGE_LABEL%.
-              </p>
-              <table role="presentation" cellpadding="0" cellspacing="0">
-                <tr><td style="border-radius:8px;background:#f4d58d;">
-                  <a href="%CHECKOUT_URL%" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">
-                    Obtener mi mapa — US$ 27
-                  </a>
-                </td></tr>
-              </table>
-
-      <p style="margin:28px 0 0;font-size:13px;color:#9aa0b5;">
-        Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda
+    <tr><td align="center" style="padding:24px;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
+        <tr><td style="padding:32px 28px;">
+          <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En este momento de tu vida —%AGE|tu etapa actual% años, con tu cumpleaños en %BIRTH_MONTH|un mes especial% y bajo la energía de %ZODIAC_SIGN|tu signo%— hay una razón por la que esta lectura llamó tu atención.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Hay una diferencia entre estar sola y sentir que nadie comprende lo que realmente llevas dentro. Después de tantas historias, tu corazón ya no quiere migajas: quiere calma, verdad y reciprocidad.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu respuesta señaló la vida amorosa como el área que más pide claridad. Por eso, tu lectura presta atención a los ciclos emocionales, a los vínculos que se repiten y a la forma en que tu intuición intenta protegerte sin cerrar por completo la puerta a una conexión genuina. En tu mapa encontrarás una explicación simbólica, preguntas para reflexionar y pasos sencillos que puedes aplicar a tu ritmo.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">El Mapa del Ángel de la Guarda reúne tu interpretación personal, tus patrones de bloqueo, una rutina de alineamiento y prácticas para acompañarte durante los próximos 30 días. La intención no es darte una frase bonita y dejarte sola: es entregarte un material al que puedas volver cuando necesites perspectiva.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Si tu vida amorosa ha sido una preocupación recurrente, este es el momento de mirar esa área con calma, sin culpa y sin seguir repitiendo exactamente las mismas decisiones.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Cuando aparezca una emoción intensa, no tengas que decidir inmediatamente. Escribe qué sientes, qué necesitas y qué límite te devolvería paz. Esa claridad también forma parte de tu sintonía.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%CHECKOUT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Ver mi lectura de amor</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p>
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;">
+        <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
+        &nbsp;·&nbsp;
+        <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
       </p>
-            </td>
-          </tr>
-        </table>
-        <p style="margin:16px 0 0;font-size:12px;color:#6b7186;">
-          <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
-          &nbsp;·&nbsp;
-          <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
-        </p>
-      </td>
-    </tr>
+    </td></tr>
   </table>
 </body>
 </html>
