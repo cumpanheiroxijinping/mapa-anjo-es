@@ -26,11 +26,16 @@
       <div class="field">UTM source<input v-model="filters.utm_source" @keyup.enter="load" placeholder="facebook" /></div>
       <div class="field"><button class="btn" @click="load">Filtrar</button></div>
       <div class="field"><button class="btn ghost" @click="runDiagnostics">Diagnóstico</button></div>
+      <div class="field"><button class="btn ghost" @click="checkVersion">Versión</button></div>
     </div>
 
     <div v-if="diag" class="stat-card" style="margin-bottom: 18px;">
       <div class="label">Contagem de registros por tabela</div>
       <pre class="muted" style="font-size: 12px; margin-top: 8px;">{{ JSON.stringify(diag.counts, null, 2) }}</pre>
+    </div>
+    <div v-if="version" class="stat-card" style="margin-bottom: 18px;">
+      <div class="label">Versión del backend</div>
+      <pre class="muted" style="font-size: 12px; margin-top: 8px;">{{ JSON.stringify(version) }}</pre>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
@@ -38,9 +43,6 @@
     <DataTable :columns="columns" :rows="leads" :rowKey="'email'" emptyText="Sin leads.">
       <template #cell-email="{ value }">
         <span class="mono">{{ value }}</span>
-      </template>
-      <template #cell-main_product_status="{ value }">
-        <Badge :text="value || 'sem compra'" :variant="statusVariant(value)" />
       </template>
       <template #cell-created_at="{ value }">
         {{ fmt(value) }}
@@ -70,7 +72,6 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import DataTable from '../../components/admin/DataTable.vue';
-import Badge from '../../components/admin/Badge.vue';
 import Modal from '../../components/admin/Modal.vue';
 import Pagination from '../../components/admin/Pagination.vue';
 import { leadsApi } from '../../composables/useApi.js';
@@ -86,7 +87,6 @@ const columns = [
   { key: 'zodiac_sign', label: 'Signo' },
   { key: 'life_challenge', label: 'Desafío' },
   { key: 'gender', label: 'Género' },
-  { key: 'main_product_status', label: 'Status' },
   { key: 'utm_source', label: 'UTM' },
   { key: 'created_at', label: 'Criado' },
 ];
@@ -119,12 +119,16 @@ const error = ref('');
 const detail = ref(null);
 const includeTest = ref(false);
 const diag = ref(null);
+const version = ref(null);
 
-function statusVariant(s) {
-  if (['paid'].includes(s)) return 'green';
-  if (['refunded', 'chargeback'].includes(s)) return 'red';
-  if (['pending'].includes(s)) return 'amber';
-  return 'purple';
+async function checkVersion() {
+  error.value = '';
+  version.value = null;
+  try {
+    version.value = await leadsApi.version();
+  } catch (e) {
+    error.value = e.message;
+  }
 }
 
 function buildParams() {

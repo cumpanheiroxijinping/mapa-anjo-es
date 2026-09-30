@@ -40,6 +40,7 @@ export const leadsApi = {
   list: (params = '') => req('GET', `/api/admin/leads${params}`),
   detail: (email) => req('GET', `/api/admin/leads/${encodeURIComponent(email)}`),
   diagnostics: () => req('GET', '/api/admin/diagnostics'),
+  version: () => req('GET', '/api/admin/diagnostics/version'),
 };
 
 // Transactions (Clientes) — /api/admin/transactions

@@ -8,6 +8,11 @@ const router = Router();
 router.use(authenticateToken);
 router.use(adminLimiter);
 
+// Lightweight version ping — confirms the new admin code is running in prod.
+router.get('/version', (_req, res) => {
+  res.json({ ok: true, version: 'leads-v2', time: Date.now() });
+});
+
 router.get('/', async (_req, res) => {
   try {
     const p = getPool();

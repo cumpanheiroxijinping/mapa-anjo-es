@@ -346,35 +346,30 @@ export async function getAllLeads() {
 
 /**
  * List funnel-captured leads (table `leads`) with optional filters + pagination.
- * LEFT JOINs contact_states to surface main_product_status (payment state), so the
- * admin can see at a glance who already purchased vs. only captured an email.
  * Returns { rows, total }.
  */
 export async function listLeads({
-  search, zodiac_sign, life_challenge, gender, utm_source, source, excludeTest = true, limit = 50, offset = 0,
+  search, zodiac_sign, life_challenge, gender, utm_source, source, excludeTest = false, limit = 50, offset = 0,
 } = {}) {
   const where = [];
   const params = [];
   let n = 1;
-  if (search) { where.push(`(l.email ILIKE $${n} OR l.first_name ILIKE $${n})`); params.push(`%${search}%`); n++; }
-  if (zodiac_sign) { where.push(`l.zodiac_sign = $${n++}`); params.push(zodiac_sign); }
-  if (life_challenge) { where.push(`l.life_challenge = $${n++}`); params.push(life_challenge); }
-  if (gender) { where.push(`l.gender = $${n++}`); params.push(gender); }
-  if (utm_source) { where.push(`l.utm_source = $${n++}`); params.push(utm_source); }
-  if (source) { where.push(`l.source = $${n++}`); params.push(source); }
-  if (excludeTest) { where.push(`l.email NOT ILIKE '%@test.com' AND l.email NOT ILIKE '%@exemplo.com' AND l.email NOT ILIKE '%@test.%'`); }
+  if (search) { where.push(`(email ILIKE $${n} OR first_name ILIKE $${n})`); params.push(`%${search}%`); n++; }
+  if (zodiac_sign) { where.push(`zodiac_sign = $${n++}`); params.push(zodiac_sign); }
+  if (life_challenge) { where.push(`life_challenge = $${n++}`); params.push(life_challenge); }
+  if (gender) { where.push(`gender = $${n++}`); params.push(gender); }
+  if (utm_source) { where.push(`utm_source = $${n++}`); params.push(utm_source); }
+  if (source) { where.push(`source = $${n++}`); params.push(source); }
+  if (excludeTest) { where.push(`email NOT ILIKE '%@test.com' AND email NOT ILIKE '%@exemplo.com' AND email NOT ILIKE '%@test.%'`); }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const p = getPool();
   const rows = await p.query(
-    `SELECT l.id, l.first_name, l.email, l.gender, l.civil_status, l.birth_day, l.birth_year,
-            l.zodiac_sign, l.life_challenge, l.utm_source, l.utm_medium, l.utm_campaign, l.source, l.created_at,
-            cs.main_product_status
-     FROM leads l
-     LEFT JOIN contact_states cs ON cs.email = l.email
-     ${clause} ORDER BY l.created_at DESC LIMIT $${n++} OFFSET $${n++}`,
+    `SELECT id, first_name, email, gender, civil_status, birth_day, birth_year,
+            zodiac_sign, life_challenge, utm_source, utm_medium, utm_campaign, source, created_at
+     FROM leads ${clause} ORDER BY created_at DESC LIMIT $${n++} OFFSET $${n++}`,
     [...params, limit, offset]
   );
-  const totalRes = await p.query(`SELECT count(*)::int AS c FROM leads l ${clause}`, params);
+  const totalRes = await p.query(`SELECT count(*)::int AS c FROM leads ${clause}`, params);
   return { rows: rows.rows, total: totalRes.rows[0]?.c || 0 };
 }
 
