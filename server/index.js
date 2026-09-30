@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import leadRouter from './routes/lead.js';
 import adminRouter from './routes/admin.js';
+import authRouter from './routes/auth.js';
+import leadsAdminRouter from './routes/leads.js';
+import transactionsRouter from './routes/transactions.js';
 import emailRouter from './routes/email.js';
 import trackingRouter from './routes/tracking.js';
 import brevoWebhookRouter from './routes/brevo-webhook.js';
@@ -22,7 +25,10 @@ app.use(express.json());
 
 // --- API routes (MUST be registered before the SPA fallback) ---
 app.use('/api/lead', leadRouter);
+app.use('/api/admin', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/admin', leadsAdminRouter);
+app.use('/api/admin', transactionsRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/brevo/webhook', brevoWebhookRouter);
 app.use('/api/event', eventRouter);

@@ -22,7 +22,7 @@
 //   (future) awaiting payment -> payment_pending
 
 import { Router } from 'express';
-import { getPool, insertPostbackLog, upsertContactState } from '../db.js';
+import { getPool, insertPostbackLog, upsertContactState, upsertTransaction } from '../db.js';
 import { ingestEvent } from '../services/automation-engine.js';
 
 const router = Router();
@@ -103,6 +103,24 @@ async function handlePostback(body) {
     const patch = {};
     if (customer.country) patch.country = customer.country;
     await upsertContactState(email, patch);
+  }
+
+  // Record/refresh the transaction row (powers the "Clientes" admin area).
+  if (code) {
+    try {
+      await upsertTransaction({
+        code: String(code),
+        email,
+        name: customer.full_name || customer.full_name || null,
+        product: body.product?.name || null,
+        value: body.sale_amount != null ? Number(body.sale_amount) : null,
+        currency: body.currency_enum_key || null,
+        status,
+        rawPayload: body,
+      });
+    } catch (txErr) {
+      console.error('[perfectpay] transaction upsert error', txErr);
+    }
   }
 
   // Build normalized event and ingest through the same pipeline.

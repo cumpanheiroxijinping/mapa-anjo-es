@@ -213,6 +213,43 @@ CREATE TABLE IF NOT EXISTS postback_log (
 CREATE INDEX IF NOT EXISTS idx_pb_email ON postback_log(email);
 `;
 
+const CREATE_ADMIN_USERS_TABLE = `
+CREATE TABLE IF NOT EXISTS admin_users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(255),
+  full_name VARCHAR(255),
+  role VARCHAR(50) DEFAULT 'support',
+  is_active BOOLEAN DEFAULT true,
+  last_login TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  created_by INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
+CREATE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username);
+`;
+
+const CREATE_TRANSACTIONS_TABLE = `
+CREATE TABLE IF NOT EXISTS transactions (
+  id BIGSERIAL PRIMARY KEY,
+  transaction_id TEXT UNIQUE NOT NULL,   -- Perfect Pay code (idempotency)
+  email TEXT,
+  name TEXT,
+  product TEXT,
+  value NUMERIC,
+  currency TEXT,
+  status TEXT,                           -- approved|canceled|rejected|chargeback|abandonment|pending
+  raw_payload JSONB,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_transactions_email ON transactions(email);
+CREATE INDEX IF NOT EXISTS idx_transactions_status ON transactions(status);
+CREATE INDEX IF NOT EXISTS idx_transactions_created ON transactions(created_at DESC);
+`;
+
 export async function initDb() {
   const p = getPool();
   await p.query(CREATE_TABLE);
@@ -235,6 +272,8 @@ export async function initDb() {
   await p.query(CREATE_AUTOMATION_INSTANCES_TABLE);
   await p.query(CREATE_PENDING_SENDS_TABLE);
   await p.query(CREATE_POSTBACK_LOG_TABLE);
+  await p.query(CREATE_ADMIN_USERS_TABLE);
+  await p.query(CREATE_TRANSACTIONS_TABLE);
   // Normalize funnel_events.event_id to TEXT (was UUID). Allows any unique
   // idempotency string (spec §15) — e.g. postback "CODE_STATUS" composites.
   await p.query(`
@@ -894,4 +933,145 @@ export async function listContactEmails({ tag } = {}) {
   }
   const res = await p.query(`SELECT email FROM contact_states`);
   return res.rows.map((r) => r.email);
+}
+
+// ============================================================ Admin users
+
+export async function getAdminUserById(id) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT id, username, email, password_hash, name, full_name, role, is_active, last_login, created_at
+     FROM admin_users WHERE id = $1`,
+    [id]
+  );
+  return res.rows[0] || null;
+}
+
+export async function findAdminUserByIdentifier(identifier) {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT * FROM admin_users
+     WHERE (LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($1)) AND is_active = true`,
+    [identifier]
+  );
+  return res.rows[0] || null;
+}
+
+export async function listAdminUsers() {
+  const p = getPool();
+  const res = await p.query(
+    `SELECT id, username, email, COALESCE(name, full_name) as name, role, is_active, last_login, created_at
+     FROM admin_users ORDER BY created_at DESC`
+  );
+  return res.rows;
+}
+
+export async function createAdminUser({ username, email, passwordHash, name, role, createdBy }) {
+  const p = getPool();
+  const res = await p.query(
+    `INSERT INTO admin_users (username, email, password_hash, name, full_name, role, is_active, created_by)
+     VALUES ($1, $2, $3, $4, $4, $5, true, $6)
+     RETURNING id, username, email, COALESCE(name, full_name) as name, role, is_active, created_at`,
+    [username, email, passwordHash, name || username, role || 'support', createdBy || null]
+  );
+  return res.rows[0];
+}
+
+export async function updateAdminUser(id, patch) {
+  const p = getPool();
+  const sets = [];
+  const params = [id];
+  let n = 2;
+  if (patch.username !== undefined) { sets.push(`username = $${n++}`); params.push(patch.username); }
+  if (patch.email !== undefined) { sets.push(`email = $${n++}`); params.push(patch.email); }
+  if (patch.name !== undefined) { sets.push(`name = $${n++}`); params.push(patch.name); }
+  if (patch.role !== undefined) { sets.push(`role = $${n++}`); params.push(patch.role); }
+  if (patch.is_active !== undefined) { sets.push(`is_active = $${n++}`); params.push(patch.is_active); }
+  if (patch.password_hash !== undefined) { sets.push(`password_hash = $${n++}`); params.push(patch.password_hash); }
+  if (!sets.length) return null;
+  const res = await p.query(
+    `UPDATE admin_users SET ${sets.join(', ')} WHERE id = $1
+     RETURNING id, username, email, COALESCE(name, full_name) as name, role, is_active, created_at`,
+    params
+  );
+  return res.rows[0] || null;
+}
+
+export async function deleteAdminUser(id) {
+  const p = getPool();
+  const res = await p.query('DELETE FROM admin_users WHERE id = $1 RETURNING username, email', [id]);
+  return res.rows[0] || null;
+}
+
+// ============================================================ Transactions
+
+/**
+ * Upsert a Perfect Pay transaction by transaction_id (code). Idempotent: on a
+ * status change it updates status/value/timestamps. Returns { inserted, updated }.
+ */
+export async function upsertTransaction({ code, email, name, product, value, currency, status, rawPayload }) {
+  const p = getPool();
+  const e = email ? email.toString().toLowerCase() : null;
+  const existing = await p.query('SELECT id, status FROM transactions WHERE transaction_id = $1', [String(code)]);
+  const prev = existing.rows[0];
+  const statusChanged = !prev || prev.status !== status;
+  await p.query(
+    `INSERT INTO transactions (transaction_id, email, name, product, value, currency, status, raw_payload, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, now())
+     ON CONFLICT (transaction_id) DO UPDATE SET
+       email = COALESCE(EXCLUDED.email, transactions.email),
+       name = COALESCE(EXCLUDED.name, transactions.name),
+       product = COALESCE(EXCLUDED.product, transactions.product),
+       value = COALESCE(EXCLUDED.value, transactions.value),
+       currency = COALESCE(EXCLUDED.currency, transactions.currency),
+       status = EXCLUDED.status,
+       raw_payload = EXCLUDED.raw_payload,
+       updated_at = now()`,
+    [String(code), e, name || null, product || null, value != null ? Number(value) : null, currency || null, status || null, JSON.stringify(rawPayload || {})]
+  );
+  return { inserted: !prev, updated: statusChanged, row: prev || null };
+}
+
+/**
+ * List transactions with optional filters + pagination.
+ * Returns { rows, total }.
+ */
+export async function listTransactions({
+  search, status, startDate, endDate, limit = 50, offset = 0,
+} = {}) {
+  const where = [];
+  const params = [];
+  let n = 1;
+  if (search) { where.push(`(email ILIKE $${n} OR name ILIKE $${n} OR transaction_id ILIKE $${n})`); params.push(`%${search}%`); n++; }
+  if (status) { where.push(`status = $${n++}`); params.push(status); }
+  if (startDate && endDate) { where.push(`created_at::date >= $${n++}::date AND created_at::date <= $${n++}::date`); params.push(startDate, endDate); }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const p = getPool();
+  const rows = await p.query(
+    `SELECT * FROM transactions ${clause} ORDER BY created_at DESC LIMIT $${n++} OFFSET $${n++}`,
+    [...params, limit, offset]
+  );
+  const totalRes = await p.query(`SELECT count(*)::int AS c FROM transactions ${clause}`, params);
+  return { rows: rows.rows, total: totalRes.rows[0]?.c || 0 };
+}
+
+export async function getTransactionStats() {
+  const p = getPool();
+  const [approved, refunded, chargeback, revenue, today, week] = await Promise.all([
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'approved'`),
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'refunded'`),
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'chargeback'`),
+    p.query(`SELECT COALESCE(SUM(value), 0)::float AS t FROM transactions WHERE status = 'approved'`),
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'approved' AND created_at::date = NOW()::date`),
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'approved' AND created_at >= NOW() - INTERVAL '7 days'`),
+  ]);
+  return {
+    approved: approved.rows[0].c,
+    refunded: refunded.rows[0].c,
+    chargeback: chargeback.rows[0].c,
+    revenue: revenue.rows[0].t || 0,
+    today: today.rows[0].c,
+    thisWeek: week.rows[0].c,
+    total: approved.rows[0].c + refunded.rows[0].c + chargeback.rows[0].c,
+  };
 }

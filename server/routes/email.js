@@ -13,29 +13,16 @@ import {
   retryFailed,
 } from '../services/email-campaign.js';
 import { createTrackingRecord } from '../services/email-tracking.js';
+import { authenticateToken } from '../middleware.js';
 
 const router = Router();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.join(__dirname, '..', 'email-templates');
 
-function adminAuth(req, res, next) {
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) {
-    // If ADMIN_TOKEN is unset, fail closed (don't expose admin endpoints).
-    return res.status(503).json({ ok: false, error: 'admin_disabled' });
-  }
-  const auth = req.headers['authorization'] || '';
-  const provided = auth.startsWith('Bearer ') ? auth.slice(7) : req.query.token;
-  if (provided !== token) {
-    return res.status(401).json({ ok: false, error: 'unauthorized' });
-  }
-  next();
-}
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Apply admin auth to everything below.
-router.use(adminAuth);
+router.use(authenticateToken);
 
 // ----------------------------------------------------------------- Templates
 

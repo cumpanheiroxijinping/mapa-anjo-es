@@ -11,18 +11,9 @@ import {
 import { ingestEvent } from '../services/automation-engine.js';
 import { sendTemplateEmail } from '../services/email-sender.js';
 import { computeSendAt } from '../util/timezone.js';
+import { authenticateToken } from '../middleware.js';
 
 const router = Router();
-
-function adminAuth(req, res, next) {
-  const token = process.env.ADMIN_TOKEN;
-  if (!token) return res.status(503).json({ ok: false, error: 'admin_disabled' });
-  const provided = (req.headers['authorization'] || '').startsWith('Bearer ')
-    ? req.headers['authorization'].slice(7)
-    : req.query.token;
-  if (provided !== token) return res.status(401).json({ ok: false, error: 'unauthorized' });
-  next();
-}
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,7 +24,7 @@ const EVENT_MAP = {
   canceled: { event_name: 'payment_failed', key: 'G' },
 };
 
-router.use(adminAuth);
+router.use(authenticateToken);
 
 // GET /api/monitor/leads?funnel_stage=&main_product_status=&suppression_recovery=&primary_challenge=&tag=&search=&limit=&offset=
 router.get('/leads', async (req, res) => {

@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router/index.js';
+import './assets/css/admin-theme.css';
 import { initUtm } from './composables/useUtm.js';
 
 initUtm();
