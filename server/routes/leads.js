@@ -13,8 +13,8 @@ const router = Router();
 router.use(authenticateToken);
 router.use(adminLimiter);
 
-// GET /api/admin/leads?search=&zodiac_sign=&life_challenge=&gender=&utm_source=&source=&includeTest=1&limit=&offset=
-router.get('/', async (req, res) => {
+// GET /api/admin/leads/list?search=&zodiac_sign=&life_challenge=&gender=&utm_source=&source=&includeTest=1&limit=&offset=
+router.get('/list', async (req, res) => {
   try {
     const q = req.query;
     const limit = Math.min(Number(q.limit) || 50, 500);

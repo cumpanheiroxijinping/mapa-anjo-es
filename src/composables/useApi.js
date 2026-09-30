@@ -37,7 +37,7 @@ export const authApi = {
 
 // Leads (contact_states) — /api/admin/leads
 export const leadsApi = {
-  list: (params = '') => req('GET', `/api/admin/leads${params}`),
+  list: (params = '') => req('GET', `/api/admin/leads/list${params}`),
   detail: (email) => req('GET', `/api/admin/leads/${encodeURIComponent(email)}`),
   diagnostics: () => req('GET', '/api/admin/diagnostics'),
   version: () => req('GET', '/api/admin/diagnostics/version'),
