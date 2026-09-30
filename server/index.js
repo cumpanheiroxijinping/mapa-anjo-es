@@ -25,12 +25,15 @@ const app = express();
 app.use(express.json());
 
 // --- API routes (MUST be registered before the SPA fallback) ---
+// Each admin sub-router is mounted at its own sub-path so the relative
+// routes defined inside it (e.g. leads.js '/list' -> /api/admin/leads/list)
+// line up with what the frontend actually calls.
 app.use('/api/lead', leadRouter);
 app.use('/api/admin', authRouter);
 app.use('/api/admin', adminRouter);
-app.use('/api/admin', leadsAdminRouter);
-app.use('/api/admin', transactionsRouter);
-app.use('/api/admin', diagnosticsRouter);
+app.use('/api/admin/leads', leadsAdminRouter);
+app.use('/api/admin/transactions', transactionsRouter);
+app.use('/api/admin/diagnostics', diagnosticsRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/brevo/webhook', brevoWebhookRouter);
 app.use('/api/event', eventRouter);
