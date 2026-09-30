@@ -33,6 +33,9 @@
       <template #cell-email="{ value }">
         <span class="mono">{{ value }}</span>
       </template>
+      <template #cell-main_product_status="{ value }">
+        <Badge :text="value || 'sem compra'" :variant="statusVariant(value)" />
+      </template>
       <template #cell-created_at="{ value }">
         {{ fmt(value) }}
       </template>
@@ -61,6 +64,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import DataTable from '../../components/admin/DataTable.vue';
+import Badge from '../../components/admin/Badge.vue';
 import Modal from '../../components/admin/Modal.vue';
 import Pagination from '../../components/admin/Pagination.vue';
 import { leadsApi } from '../../composables/useApi.js';
@@ -76,6 +80,7 @@ const columns = [
   { key: 'zodiac_sign', label: 'Signo' },
   { key: 'life_challenge', label: 'Desafío' },
   { key: 'gender', label: 'Género' },
+  { key: 'main_product_status', label: 'Status' },
   { key: 'utm_source', label: 'UTM' },
   { key: 'created_at', label: 'Criado' },
 ];
@@ -107,6 +112,13 @@ const limit = 50;
 const error = ref('');
 const detail = ref(null);
 const includeTest = ref(false);
+
+function statusVariant(s) {
+  if (['paid'].includes(s)) return 'green';
+  if (['refunded', 'chargeback'].includes(s)) return 'red';
+  if (['pending'].includes(s)) return 'amber';
+  return 'purple';
+}
 
 function buildParams() {
   const p = new URLSearchParams();
