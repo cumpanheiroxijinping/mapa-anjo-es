@@ -25,6 +25,12 @@
       </div>
       <div class="field">UTM source<input v-model="filters.utm_source" @keyup.enter="load" placeholder="facebook" /></div>
       <div class="field"><button class="btn" @click="load">Filtrar</button></div>
+      <div class="field"><button class="btn ghost" @click="runDiagnostics">Diagnóstico</button></div>
+    </div>
+
+    <div v-if="diag" class="stat-card" style="margin-bottom: 18px;">
+      <div class="label">Contagem de registros por tabela</div>
+      <pre class="muted" style="font-size: 12px; margin-top: 8px;">{{ JSON.stringify(diag.counts, null, 2) }}</pre>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
@@ -112,6 +118,7 @@ const limit = 50;
 const error = ref('');
 const detail = ref(null);
 const includeTest = ref(false);
+const diag = ref(null);
 
 function statusVariant(s) {
   if (['paid'].includes(s)) return 'green';
@@ -142,6 +149,17 @@ async function load() {
   } catch (e) {
     if (e.code === 401) error.value = 'Sesión expirada.';
     else error.value = e.message;
+  }
+}
+
+async function runDiagnostics() {
+  error.value = '';
+  diag.value = null;
+  try {
+    const r = await leadsApi.diagnostics();
+    diag.value = r;
+  } catch (e) {
+    error.value = e.message;
   }
 }
 
