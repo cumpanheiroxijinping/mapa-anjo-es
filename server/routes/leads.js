@@ -1,8 +1,10 @@
 // GET /api/admin/leads (filtered + paginated) and /:email (cross-reference detail).
+// The "Leads" tab lists the funnel-captured leads table (`leads`), which is where
+// real quiz/email captures live — not `contact_states` (payment/automation state).
 import { Router } from 'express';
 import { authenticateToken, adminLimiter } from '../middleware.js';
 import {
-  listContactStates, getContactState, getActiveInstances, listFunnelEvents,
+  listLeads, getContactState, getActiveInstances, listFunnelEvents,
   listPostbackLogs, getPool,
 } from '../db.js';
 
@@ -11,23 +13,19 @@ const router = Router();
 router.use(authenticateToken);
 router.use(adminLimiter);
 
-// GET /api/admin/leads?funnel_stage=&main_product_status=&suppression_recovery=&primary_challenge=&tag=&search=&limit=&offset=
+// GET /api/admin/leads?search=&zodiac_sign=&life_challenge=&gender=&utm_source=&source=&includeTest=1&limit=&offset=
 router.get('/', async (req, res) => {
   try {
     const q = req.query;
     const limit = Math.min(Number(q.limit) || 50, 500);
     const offset = Math.max(Number(q.offset) || 0, 0);
-    const suppression =
-      q.suppression_recovery === '' || q.suppression_recovery === undefined
-        ? undefined
-        : (q.suppression_recovery === 'true' || q.suppression_recovery === '1');
-    const { rows, total } = await listContactStates({
-      funnel_stage: q.funnel_stage || undefined,
-      main_product_status: q.main_product_status || undefined,
-      suppression_recovery: suppression,
-      primary_challenge: q.primary_challenge || undefined,
-      tag: q.tag || undefined,
+    const { rows, total } = await listLeads({
       search: q.search || undefined,
+      zodiac_sign: q.zodiac_sign || undefined,
+      life_challenge: q.life_challenge || undefined,
+      gender: q.gender || undefined,
+      utm_source: q.utm_source || undefined,
+      source: q.source || undefined,
       excludeTest: !q.includeTest,
       limit, offset,
     });

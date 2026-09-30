@@ -4,35 +4,32 @@
       <input type="checkbox" v-model="includeTest" @change="load" /> Mostrar leads de teste (ex.: @test.com)
     </label>
     <div class="filter-bar">
-      <div class="field">Buscar email<input v-model="filters.search" @keyup.enter="load" placeholder="email@dominio" /></div>
-      <div class="field">Funnel stage
-        <select v-model="filters.funnel_stage" @change="load">
+      <div class="field">Buscar email/nome<input v-model="filters.search" @keyup.enter="load" placeholder="email@dominio" /></div>
+      <div class="field">Signo
+        <select v-model="filters.zodiac_sign" @change="load">
           <option value="">Todos</option>
-          <option v-for="s in stages" :key="s" :value="s">{{ s }}</option>
-        </select>
-      </div>
-      <div class="field">Status principal
-        <select v-model="filters.main_product_status" @change="load">
-          <option value="">Todos</option>
-          <option v-for="s in statuses" :key="s" :value="s">{{ s }}</option>
+          <option v-for="s in signs" :key="s" :value="s">{{ s }}</option>
         </select>
       </div>
       <div class="field">Desafío
-        <select v-model="filters.primary_challenge" @change="load">
+        <select v-model="filters.life_challenge" @change="load">
           <option value="">Todos</option>
           <option v-for="c in challenges" :key="c" :value="c">{{ c }}</option>
         </select>
       </div>
-      <div class="field">Tag<input v-model="filters.tag" @keyup.enter="load" placeholder="PAYMENT_FAILED" /></div>
+      <div class="field">Género
+        <select v-model="filters.gender" @change="load">
+          <option value="">Todos</option>
+          <option v-for="g in genders" :key="g" :value="g">{{ g }}</option>
+        </select>
+      </div>
+      <div class="field">UTM source<input v-model="filters.utm_source" @keyup.enter="load" placeholder="facebook" /></div>
       <div class="field"><button class="btn" @click="load">Filtrar</button></div>
     </div>
 
     <p v-if="error" class="err">{{ error }}</p>
 
     <DataTable :columns="columns" :rows="leads" :rowKey="'email'" emptyText="Sin leads.">
-      <template #cell-main_product_status="{ value }">
-        <Badge :text="value" :variant="statusVariant(value)" />
-      </template>
       <template #cell-email="{ value }">
         <span class="mono">{{ value }}</span>
       </template>
@@ -64,22 +61,22 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import DataTable from '../../components/admin/DataTable.vue';
-import Badge from '../../components/admin/Badge.vue';
 import Modal from '../../components/admin/Modal.vue';
 import Pagination from '../../components/admin/Pagination.vue';
 import { leadsApi } from '../../composables/useApi.js';
 
-const stages = ['QUIZ_NEW', 'QUIZ_COMPLETED', 'VSL2_VIEWED', 'OFFER_NO_CHECKOUT', 'CHECKOUT_ABANDONED', 'PAID', 'REFUNDED'];
-const statuses = ['none', 'pending', 'paid', 'refunded', 'chargeback'];
+const signs = ['Aries', 'Tauro', 'Géminis', 'Cáncer', 'Leo', 'Virgo', 'Libra', 'Escorpio', 'Sagitario', 'Capricornio', 'Acuario', 'Piscis'];
 const challenges = ['love', 'finance', 'health', 'happiness'];
+const genders = ['femenino', 'masculino', 'outro'];
 
-const filters = reactive({ search: '', funnel_stage: '', main_product_status: '', primary_challenge: '', tag: '' });
+const filters = reactive({ search: '', zodiac_sign: '', life_challenge: '', gender: '', utm_source: '' });
 const columns = [
+  { key: 'first_name', label: 'Nombre' },
   { key: 'email', label: 'Email', mono: true },
-  { key: 'funnel_stage', label: 'Stage' },
-  { key: 'main_product_status', label: 'Status' },
-  { key: 'primary_challenge', label: 'Desafío' },
-  { key: 'country', label: 'País' },
+  { key: 'zodiac_sign', label: 'Signo' },
+  { key: 'life_challenge', label: 'Desafío' },
+  { key: 'gender', label: 'Género' },
+  { key: 'utm_source', label: 'UTM' },
   { key: 'created_at', label: 'Criado' },
 ];
 const stateCols = [
@@ -111,22 +108,15 @@ const error = ref('');
 const detail = ref(null);
 const includeTest = ref(false);
 
-function statusVariant(s) {
-  if (['paid'].includes(s)) return 'green';
-  if (['refunded', 'chargeback'].includes(s)) return 'red';
-  if (['pending'].includes(s)) return 'amber';
-  return '';
-}
-
 function buildParams() {
   const p = new URLSearchParams();
   p.set('limit', limit);
   p.set('offset', (page.value - 1) * limit);
   if (filters.search) p.set('search', filters.search);
-  if (filters.funnel_stage) p.set('funnel_stage', filters.funnel_stage);
-  if (filters.main_product_status) p.set('main_product_status', filters.main_product_status);
-  if (filters.primary_challenge) p.set('primary_challenge', filters.primary_challenge);
-  if (filters.tag) p.set('tag', filters.tag);
+  if (filters.zodiac_sign) p.set('zodiac_sign', filters.zodiac_sign);
+  if (filters.life_challenge) p.set('life_challenge', filters.life_challenge);
+  if (filters.gender) p.set('gender', filters.gender);
+  if (filters.utm_source) p.set('utm_source', filters.utm_source);
   if (includeTest.value) p.set('includeTest', '1');
   return '?' + p.toString();
 }
