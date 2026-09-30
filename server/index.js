@@ -42,6 +42,16 @@ app.use('/t', trackingRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// Global error handler — always respond JSON (never the default HTML 500 page),
+// so the admin frontend can surface the real error message instead of "request_failed".
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  if (res.headersSent) return;
+  const status = err.status || (err.statusCode) || 500;
+  console.error('[error]', err.message);
+  res.status(status).json({ ok: false, error: 'server_error', message: err.message || 'internal_error' });
+});
+
 // --- Standalone funnel pages (upsell / downsell / thank-you) ---
 // These live in root folders (up1, up2, up3, dw1, dw2, dw3, gracias) as
 // self-contained HTML and must be reachable at /up1, /up2, ... /gracias.
