@@ -1,4 +1,5 @@
 import express from 'express';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -20,6 +21,9 @@ import { startAutomationEngine } from './services/automation-engine.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.join(__dirname, '..', 'dist');
+
+// Load local .env (no-op in Railway where vars are injected directly).
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -60,7 +64,7 @@ app.use((err, req, res, _next) => {
 // --- Standalone funnel pages (upsell / downsell / thank-you) ---
 // These live in root folders (up1, up2, up3, dw1, dw2, dw3, gracias) as
 // self-contained HTML and must be reachable at /up1, /up2, ... /gracias.
-const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias', 'soporte'];
+const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias', 'soporte', 'up1-ht', 'up2-ht', 'up3-ht', 'dw1-ht', 'dw2-ht', 'dw3-ht'];
 for (const folder of funnelFolders) {
   const dir = path.join(__dirname, '..', folder);
   if (fs.existsSync(dir)) {
