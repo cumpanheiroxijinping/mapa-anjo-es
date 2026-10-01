@@ -203,10 +203,28 @@ Este Video Corto Contiene Información Importante Sobre Tu…<br> <u>Mapa del Á
 <script type="text/javascript"> var s=document.createElement("script"); s.src="https://scripts.converteai.net/eaf1c93c-4678-434c-baf0-14a7282b15d6/players/6ab6399ea3c48172f639fc3d/v4/player.js", s.async=!0,document.head.appendChild(s); </script>
 
 <!-- HOTMART - Sales Funnel Widget -->
-<div id="hotmart-sales-funnel"></div>
+<div class="esconder smartplayer-scroll-event" id="hotmart-sales-funnel"></div>
 <script src="https://checkout.hotmart.com/lib/hotmart-checkout-elements.js"></script>
 <script>
 checkoutElements.init('salesFunnel').mount('#hotmart-sales-funnel')
+</script>
+<style>.esconder { display: none; }</style>
+<script>
+  // Reproduz o delay do botão original PP (up3 = 341s) após o player Vturb ficar pronto
+  var delaySeconds = 341;
+  function revealFunnel() {
+    document.querySelectorAll('.esconder').forEach(function (el) {
+      el.classList.remove('esconder');
+    });
+  }
+  var player = document.querySelector('vturb-smartplayer');
+  if (player) {
+    player.addEventListener('player:ready', function () {
+      player.displayHiddenElements(delaySeconds, ['.esconder'], { persist: true });
+    });
+  }
+  // Fallback: revela mesmo se o player Vturb não disparar o evento
+  setTimeout(revealFunnel, (delaySeconds + 30) * 1000);
 </script>
 <!-- HOTMART - Sales Funnel Widget -->				</div>
 				</div>
