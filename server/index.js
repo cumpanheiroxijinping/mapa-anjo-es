@@ -14,6 +14,7 @@ import trackingRouter from './routes/tracking.js';
 import brevoWebhookRouter from './routes/brevo-webhook.js';
 import eventRouter from './routes/event.js';
 import perfectPayRouter from './routes/perfectpay-webhook.js';
+import hotmartWebhookRouter from './routes/hotmart-webhook.js';
 import monitorRouter from './routes/monitor.js';
 import { initDb } from './db.js';
 import { startEmailScheduler } from './services/email-campaign.js';
@@ -26,7 +27,13 @@ const distDir = path.join(__dirname, '..', 'dist');
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+// Capture the raw body so webhook routes (Hotmart) can verify an HMAC
+// signature over the exact bytes received. Harmless for other routes.
+app.use(express.json({
+  verify: (req, _res, buf) => {
+    if (buf && buf.length) req.rawBody = buf.toString('utf8');
+  },
+}));
 
 // --- API routes (MUST be registered before the SPA fallback) ---
 // Each admin sub-router is mounted at its own sub-path so the relative
@@ -42,6 +49,7 @@ app.use('/api/email', emailRouter);
 app.use('/api/brevo/webhook', brevoWebhookRouter);
 app.use('/api/event', eventRouter);
 app.use('/api/postback', perfectPayRouter);
+app.use('/api/postback', hotmartWebhookRouter);
 app.use('/api/monitor', monitorRouter);
 
 // --- Self-hosted email tracking (pixel + click redirect) ---
