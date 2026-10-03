@@ -6,10 +6,10 @@ export const config = {
   // --- VTurb / ConverteAI videos (replace the tynk.ai embeds above) ---
   // VSL1: video shown before the email capture overlay.
   VSL1_VTURB: {
-    id: 'vid-6ab40bea3ae810ff38adbb47',
-    playerId: '6ab40bea3ae810ff38adbb47',
+    id: 'vid-6ac1651e89c7a03a20614f34',
+    playerId: '6ac1651e89c7a03a20614f34',
     scriptSrc:
-      'https://scripts.converteai.net/eaf1c93c-4678-434c-baf0-14a7282b15d6/players/6ab40bea3ae810ff38adbb47/v4/player.js',
+      'https://scripts.converteai.net/eaf1c93c-4678-434c-baf0-14a7282b15d6/players/6ac1651e89c7a03a20614f34/v4/player.js',
     // padding-top % of the placeholder = (video height / width) * 100.
     placeholderPadding: 178.21782178217822,
   },
