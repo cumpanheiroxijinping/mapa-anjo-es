@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Algo salió mal – Mapa del Ángel de la Guarda</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif; color: #f4f1ea; background: #0b1020;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .bg { position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(circle at 50% 30%, #2a2350 0%, #0b1020 70%); }
+    .container { padding: 40px 24px; max-width: 620px; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(28px, 6vw, 44px);
+      letter-spacing: 1px; margin-bottom: 16px; color: #f7e9c8; }
+    .status { display: inline-block; margin: 8px 0 20px; padding: 8px 20px;
+      border-radius: 999px; font-size: 14px; font-weight: 600; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); }
+    p { font-size: 17px; line-height: 1.6; color: #cfd3e0; margin-bottom: 14px; }
+    .warn { font-size: 15px; color: #f4d58d; margin: 16px 0; }
+    .mail { display: inline-block; margin: 22px 0 10px; padding: 16px 34px;
+      font-size: 17px; font-weight: 700; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); border-radius: 8px;
+      text-decoration: none; box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+    .mail:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+    .back { display: inline-block; margin-top: 8px; color: #9aa3c0;
+      text-decoration: underline; font-size: 15px; }
+    .back:hover { color: #f4f1ea; }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <h1>No pudimos continuar</h1>
+    <div class="status" id="status-pill">Intenta de nuevo</div>
+    <p id="mensaje">Ocurrió un inconveniente al procesar tu solicitud. Por favor,
+       vuelve a intentarlo en unos minutos.</p>
+    <p class="warn">Si el problema persiste, escríbenos y te ayudamos a continuar
+       sin perder tu lugar.</p>
+    <a class="mail" href="mailto:hola@mapa-del-angel.com">hola@mapa-del-angel.com</a>
+    <br>
+    <a class="back" href="/">Volver al inicio</a>
+  </div>
+  <script>
+    // Friendly mapping of ?motivo= values to human text (spec §10 / redirect.js).
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const motivo = (params.get('motivo') || '').toString();
+      const map = {
+        'parametro-invalido': 'El enlace que usaste no es válido. Usa el botón original de tu correo.',
+        'provedor-nao-configurado': 'Aún no configuramos el medio de pago para tu región. Contáctanos y te indicamos cómo continuar.',
+        'provedor-no-configurado': 'Aún no configuramos el medio de pago para tu región. Contáctanos y te indicamos cómo continuar.',
+      };
+      if (map[motivo]) {
+        document.getElementById('mensaje').textContent = map[motivo];
+      }
+    })();
+  </script>
+</body>
+</html>

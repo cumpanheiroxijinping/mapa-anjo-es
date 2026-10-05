@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estado de tu pedido – Mapa del Ángel de la Guarda</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif; color: #f4f1ea; background: #0b1020;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .bg { position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(circle at 50% 30%, #2a2350 0%, #0b1020 70%); }
+    .container { padding: 40px 24px; max-width: 680px; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(28px, 6vw, 44px);
+      letter-spacing: 1px; margin-bottom: 16px; color: #f7e9c8; }
+    .status { display: inline-block; margin: 8px 0 20px; padding: 8px 20px;
+      border-radius: 999px; font-size: 14px; font-weight: 600; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); }
+    p { font-size: 17px; line-height: 1.6; color: #cfd3e0; margin-bottom: 14px; }
+    .warn { font-size: 15px; color: #f4d58d; margin: 16px 0; }
+    .mail { display: inline-block; margin: 22px 0 10px; padding: 16px 34px;
+      font-size: 17px; font-weight: 700; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); border-radius: 8px;
+      text-decoration: none; box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+    .back { display: inline-block; margin-top: 8px; color: #9aa3c0;
+      text-decoration: underline; font-size: 15px; }
+    .back:hover { color: #f4f1ea; }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <h1>Estado de tu pedido</h1>
+    <div class="status">Pago pendiente de confirmación</div>
+    <p>Recibimos tu solicitud de pago. Mientras se confirma con tu banco o
+       proveedor, por favor <strong>no realices un segundo pago</strong>.</p>
+    <p class="warn">Si pagaste con PIX u otro método que requiere instrucciones,
+       síguelas en la pantalla de tu banco dentro del plazo mostrado.</p>
+    <p style="font-size:15px;color:#9aa3c0;">La confirmación puede tardar unos minutos u horas. Esta página no confirma
+       la compra por sí sola: la fuente de verdad es el estado recibido del
+       proveedor de pago.</p>
+    <a class="mail" href="mailto:soporte@mail.timeoffaith.online">soporte@mail.timeoffaith.online</a>
+    <br>
+    <a class="back" href="/">Volver al inicio</a>
+  </div>
+</body>
+</html>

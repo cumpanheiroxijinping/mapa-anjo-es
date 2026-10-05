@@ -16,6 +16,7 @@ import eventRouter from './routes/event.js';
 import perfectPayRouter from './routes/perfectpay-webhook.js';
 import hotmartWebhookRouter from './routes/hotmart-webhook.js';
 import monitorRouter from './routes/monitor.js';
+import redirectRouter from './routes/redirect.js';
 import { initDb } from './db.js';
 import { startEmailScheduler } from './services/email-campaign.js';
 import { startAutomationEngine } from './services/automation-engine.js';
@@ -57,6 +58,11 @@ app.use('/api/monitor', monitorRouter);
 // SPA fallback so they are never swallowed by index.html.
 app.use('/t', trackingRouter);
 
+// --- Intention-based redirector (spec §2 / §3.3 / §10) ---
+// Single high-intent 302 to the active provider. Registered before the SPA
+// fallback so /checkout-redirect is never swallowed by index.html.
+app.use(redirectRouter);
+
 app.get('/api/health', (_req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // Global error handler — always respond JSON (never the default HTML 500 page),
@@ -72,7 +78,7 @@ app.use((err, req, res, _next) => {
 // --- Standalone funnel pages (upsell / downsell / thank-you) ---
 // These live in root folders (up1, up2, up3, dw1, dw2, dw3, gracias) as
 // self-contained HTML and must be reachable at /up1, /up2, ... /gracias.
-const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias', 'soporte', 'up1-ht', 'up2-ht', 'up3-ht', 'dw1-ht', 'dw2-ht', 'dw3-ht'];
+const funnelFolders = ['up1', 'up2', 'up3', 'dw1', 'dw2', 'dw3', 'gracias', 'soporte', 'up1-ht', 'up2-ht', 'up3-ht', 'dw1-ht', 'dw2-ht', 'dw3-ht', 'continuar-quiz', 'continuar-vsl2', 'pedido-status', 'entrega', 'erro', 'up1-recovery', 'up2-recovery', 'up3-recovery'];
 for (const folder of funnelFolders) {
   const dir = path.join(__dirname, '..', folder);
   if (fs.existsSync(dir)) {

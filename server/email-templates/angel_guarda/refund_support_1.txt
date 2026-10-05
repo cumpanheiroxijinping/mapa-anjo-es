@@ -1,28 +1,6 @@
-Subject line: Estamos aquí para ayudarte con tu solicitud
-Preheader: Confirmemos los próximos pasos de soporte
+Subject line: Recibimos tu solicitud y vamos a ayudarte
+Preheader: Soporte para tu pedido
 From: Mapa del Ángel - soporte@mail.timeoffaith.online
 
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>refund_support_1</title>
-</head>
-<body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr><td align="center" style="padding:24px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:32px 28px;">
-          <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En este momento de tu vida —%AGE|tu etapa actual% años, con tu cumpleaños en %BIRTH_MONTH|un mes especial% y bajo la energía de %ZODIAC_SIGN|tu signo%— hay una razón por la que esta lectura llamó tu atención.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Lo que sentiste al llegar hasta aquí merece más que una respuesta rápida. A veces una señal comienza como una pequeña inquietud y termina mostrando un patrón que llevabas años intentando comprender.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Recibimos tu solicitud y queremos tratarla con atención. Nuestro equipo revisará los datos del pedido y te responderá desde soporte@mail.timeoffaith.online. Para agilizar la atención, incluye el correo usado en la compra y el número de pedido, si lo tienes.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu mapa reúne tus respuestas, tu etapa de vida y la forma en que estás buscando orientación. No es un texto genérico: es una invitación a mirar tu historia con más claridad y menos culpa. En tu mapa encontrarás una explicación simbólica, preguntas para reflexionar y pasos sencillos que puedes aplicar a tu ritmo.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">No necesitas enviar datos completos de tarjeta ni información sensible. Si tu problema es el acceso, la entrega o un cobro que no reconoces, descríbelo brevemente para que podamos orientarte mejor.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Mientras analizamos tu caso, evita realizar una nueva compra para no duplicar el pedido.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%SUPPORT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Continuar mi lectura</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p>
-        </td></tr>
-      </table>
-      <p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;">
-        <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
-        &nbsp;·&nbsp;
-        <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>
+<html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>refund_support_1</title></head><body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;"><tr><td style="padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu información será tratada con cuidado. Si faltan datos, la lectura seguirá usando únicamente lo que hayas compartido.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Entendemos que una compra puede generar dudas y queremos revisar tu caso con atención. Responde a este correo o escribe a soporte@mail.timeoffaith.online con el correo utilizado y el número de pedido.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">No envíes datos completos de tarjeta ni contraseñas. Si el problema es acceso, entrega, cobro o reembolso, indícalo para que podamos dirigir tu solicitud correctamente.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Mientras el equipo revisa tu caso, evita hacer una nueva compra para no duplicar el pedido.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%SUPPORT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Contactar soporte</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p></td></tr></table><p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;"><a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a> &nbsp;·&nbsp; <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a></p></td></tr></table></body></html>

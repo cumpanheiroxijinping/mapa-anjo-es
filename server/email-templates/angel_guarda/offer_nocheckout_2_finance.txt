@@ -1,28 +1,6 @@
-Subject line: Tu mapa está listo para ser reclamado
-Preheader: Una lectura profunda para comprender tu señal
+Subject line: ¿Y si el problema no fuera falta de esfuerzo?
+Preheader: Una nueva forma de interpretar el bloqueo
 From: Mapa del Ángel - soporte@mail.timeoffaith.online
 
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>offer_nocheckout_2_finance</title>
-</head>
-<body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr><td align="center" style="padding:24px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:32px 28px;">
-          <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En este momento de tu vida —%AGE|tu etapa actual% años, con tu cumpleaños en %BIRTH_MONTH|un mes especial% y bajo la energía de %ZODIAC_SIGN|tu signo%— hay una razón por la que esta lectura llamó tu atención.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Cuando el dinero llega y vuelve a escaparse, no solo pesa en la cuenta: también empieza a pesar en la tranquilidad, en las decisiones y en la forma de mirar el futuro.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu respuesta señaló las finanzas como el área que más necesita claridad en este momento. Por eso, esta parte de tu lectura se enfoca en los patrones de escasez, las oportunidades que pueden pasar desapercibidas y la sensación de avanzar mucho para terminar siempre en el mismo lugar. En tu mapa encontrarás una explicación simbólica, preguntas para reflexionar y pasos sencillos que puedes aplicar a tu ritmo.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">El Mapa del Ángel de la Guarda reúne tu interpretación personal, tus patrones de bloqueo, una rutina de alineamiento y prácticas para acompañarte durante los próximos 30 días. La intención no es darte una frase bonita y dejarte sola: es entregarte un material al que puedas volver cuando necesites perspectiva.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Si tus finanzas ha sido una preocupación recurrente, este es el momento de mirar esa área con calma, sin culpa y sin seguir repitiendo exactamente las mismas decisiones.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Antes de tomar una decisión importante, reserva unos minutos para observar qué oportunidad se repite, qué miedo aparece y cuál es el siguiente paso concreto que sí está bajo tu control.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%CHECKOUT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Ver mi lectura financiera</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p>
-        </td></tr>
-      </table>
-      <p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;">
-        <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
-        &nbsp;·&nbsp;
-        <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>
+<html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>offer_nocheckout_2_finance</title></head><body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;"><tr><td style="padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En tu caso, %LIFE_CHALLENGE|finanzas% aparece ligado a %ZODIAC_SIGN|tu signo% y a la etapa que estás atravesando (%AGE|tu etapa actual% años). Tu cumpleaños en %BIRTH_MONTH|un mes especial% también puede convertirse en un momento de pausa para revisar qué deseas iniciar, cerrar o cuidar.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Has hecho intentos, has esperado respuestas y quizá también has sentido que vuelves al mismo punto. La oferta llama a ese patrón disonancia: una interferencia que puede hacerte dudar justo cuando necesitas actuar.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu mapa te ayuda a identificar esa interferencia, observar los signos que se repiten y elegir una práctica concreta para volver a tu eje.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%CHECKOUT_REDIRECT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Conocer el Mapa</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p></td></tr></table><p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;"><a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a> &nbsp;·&nbsp; <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a></p></td></tr></table></body></html>

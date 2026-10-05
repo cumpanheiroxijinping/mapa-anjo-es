@@ -207,7 +207,7 @@ async function fetchWithRetry(url, options, { retries = 3, timeoutMs = 10000, ba
  *   birth_year, zodiac_sign, life_challenge, utm_source, utm_medium, ... }
  * @returns {Record<string,string>}
  */
-export function leadToTemplateVars(lead = {}) {
+export function leadToTemplateVars(lead = {}, template = '') {
   const age = computeAge(lead.birth_year);
   const base = {
     FIRSTNAME: (lead.first_name || '').toString().split(' ')[0],
@@ -242,7 +242,131 @@ export function leadToTemplateVars(lead = {}) {
   } else {
     base.UNSUBSCRIBE_URL = process.env.SUPPORT_URL || '#';
   }
-  return base;
+  // Resolve intention-based route placeholders (spec §6) for this template.
+  const linkPlaceholders = resolveLinkPlaceholders(template || lead._template || '', base);
+  return { ...base, ...linkPlaceholders };
+}
+
+// =====================================================================
+// Link-placeholder resolver (spec §6 / §12).
+//
+// Templates use intention-based placeholders (%CHECKOUT_REDIRECT_URL%,
+// %QUIZ_RESUME_URL%, %VSL2_URL%, %ORDER_STATUS_URL%, %DELIVERY_URL%,
+// %UP1_RECOVERY_URL%, ...). This module resolves each to the real public URL
+// with campaign params (email_id, stage, challenge, UTMs) appended per the
+// template's filename. No email is ever placed in clear text in the URL.
+// =====================================================================
+
+const CHALLENGE_SUFFIX = /_(finance|love|health|happiness)$/;
+
+// template prefix -> spec "stage" value (spec §5).
+const STAGE_BY_PREFIX = {
+  quiz_abandon: 'quiz_abandon',
+  lead_vsl2: 'vsl2_lead',
+  vsl2_nooffer: 'vsl2_nooffer',
+  offer_nocheckout: 'offer_nocheckout',
+  checkout_recovery: 'checkout_recovery',
+  payment_failed: 'payment_failed',
+  payment_pending: 'payment_pending',
+  welcome: 'welcome',
+  onboarding: 'onboarding',
+  upsell_up1: 'up1',
+  upsell_up2: 'up2',
+  upsell_up3: 'up3',
+  refund_support: 'refund_support',
+};
+
+function publicBaseUrl() {
+  return (
+    process.env.PUBLIC_BASE_URL ||
+    process.env.TRACKING_BASE_URL ||
+    process.env.DEFAULT_EVENT_SOURCE_URL ||
+    'https://mapa.timeoffaith.online'
+  ).replace(/\/+$/, '');
+}
+
+function parseTemplateMeta(template) {
+  const file = (template || '').includes('/')
+    ? template.split('/').pop()
+    : (template || '').toString();
+  const chMatch = file.match(CHALLENGE_SUFFIX);
+  const challenge = chMatch ? chMatch[1] : '';
+  let stage = '';
+  for (const [prefix, st] of Object.entries(STAGE_BY_PREFIX)) {
+    if (file.startsWith(prefix)) {
+      stage = st;
+      break;
+    }
+  }
+  return { file, challenge, stage, emailId: file };
+}
+
+function pickUtms(vars) {
+  const out = {};
+  for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+    const v = vars && vars[k];
+    if (v) out[k] = String(v);
+  }
+  return out;
+}
+
+function buildRoute(base, path, params) {
+  const u = new URL(base + path);
+  for (const [k, v] of Object.entries(params || {})) {
+    if (v === undefined || v === null || v === '') continue;
+    if (k === 'challenge' && !v) continue;
+    if (!u.searchParams.has(k)) u.searchParams.set(k, String(v));
+  }
+  return u.toString();
+}
+
+/**
+ * Resolve the intention-based link placeholders for a given template + vars.
+ * Returns ONLY the route placeholders (never overrides SUPPORT_URL /
+ * UNSUBSCRIBE_URL, which are derived per-email in leadToTemplateVars).
+ */
+export function resolveLinkPlaceholders(template, vars = {}) {
+  const base = publicBaseUrl();
+  const { challenge, stage, emailId } = parseTemplateMeta(template);
+  const utms = pickUtms(vars);
+  const withChallenge = { email_id: emailId, challenge, ...utms };
+
+  return {
+    CHECKOUT_REDIRECT_URL: buildRoute(base, '/checkout-redirect', {
+      stage: stage || undefined,
+      email_id: emailId,
+      challenge,
+      ...utms,
+    }),
+    QUIZ_RESUME_URL: buildRoute(base, '/continuar-quiz', withChallenge),
+    VSL2_URL: buildRoute(base, '/continuar-vsl2', {
+      email_id: emailId,
+      challenge,
+      vsl_stage: vars.vsl_stage || undefined,
+      video_position: vars.video_position || undefined,
+      ...utms,
+    }),
+    ORDER_STATUS_URL: buildRoute(base, '/pedido-status', withChallenge),
+    DELIVERY_URL: buildRoute(base, '/entrega', { email_id: emailId, ...utms }),
+    UP1_RECOVERY_URL: buildRoute(base, '/up1-recovery', {
+      stage: 'up1',
+      email_id: 'upsell_up1_1',
+      challenge,
+      ...utms,
+    }),
+    UP2_RECOVERY_URL: buildRoute(base, '/up2-recovery', {
+      stage: 'up2',
+      email_id: 'upsell_up2_1',
+      challenge,
+      ...utms,
+    }),
+    UP3_RECOVERY_URL: buildRoute(base, '/up3-recovery', {
+      stage: 'up3',
+      email_id: 'upsell_up3_1',
+      challenge,
+      ...utms,
+    }),
+  };
 }
 
 function computeAge(birthYear) {
@@ -354,7 +478,7 @@ export async function sendTemplateEmail({
   const tmpl = parseTemplateFile(getTemplateFile(template));
 
   // Merge: lead-derived vars first, then explicit overrides.
-  const mergedVars = { ...leadToTemplateVars(lead), ...vars };
+  const mergedVars = { ...leadToTemplateVars(lead, template), ...vars };
 
   const subject = tmpl.subject ? substituteVariables(tmpl.subject, mergedVars) : '';
   let htmlContent = substituteVariables(tmpl.html, mergedVars);

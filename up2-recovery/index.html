@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oferta especial – Mapa del Ángel de la Guarda</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif; color: #f4f1ea; background: #0b1020;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .bg { position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(circle at 50% 30%, #2a2350 0%, #0b1020 70%); }
+    .container { padding: 40px 24px; max-width: 680px; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(26px, 6vw, 42px);
+      letter-spacing: 1px; margin-bottom: 14px; color: #f7e9c8; }
+    .status { display: inline-block; margin: 6px 0 18px; padding: 8px 20px;
+      border-radius: 999px; font-size: 14px; font-weight: 600; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); }
+    p { font-size: 17px; line-height: 1.6; color: #cfd3e0; margin-bottom: 14px; }
+    .offer { font-size: 16px; color: #f4d58d; margin: 10px 0 18px; }
+    .mail { display: inline-block; margin: 24px 0 10px; padding: 16px 34px;
+      font-size: 17px; font-weight: 700; color: #0b1020;
+      background: linear-gradient(135deg, #f7e9c8, #e6c98f); border-radius: 8px;
+      text-decoration: none; box-shadow: 0 6px 24px rgba(0,0,0,0.35); }
+    .mail:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+    .back { display: inline-block; margin-top: 8px; color: #9aa3c0;
+      text-decoration: underline; font-size: 15px; }
+    .back:hover { color: #f4f1ea; }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <h1>Una última oportunidad</h1>
+    <div class="status">Oferta de recuperación</div>
+    <p>Notamos que no completaste la segunda oferta complementaria después de tu
+       compra. Antes de cerrar, queremos dejarte acceso a ella una vez más, al
+       mismo precio especial.</p>
+    <p class="offer">Esta página <strong>no es una nueva compra</strong>: solo
+       completa la oferta que quedó pendiente. No te cobra de nuevo tu Mapa.</p>
+    <p style="font-size:15px;color:#9aa3c0;">Al continuar, volverás al medio de pago
+       oficial para finalizar. No compartas tus datos en otro lugar.</p>
+    <a class="mail" id="cta" href="#">Completar mi oferta</a>
+    <br>
+    <a class="back" href="/">Volver al inicio</a>
+  </div>
+  <script>
+    // Forward attribution to the redirector for this upsell (spec §3.3 / §10).
+    (function () {
+      const q = new URLSearchParams(window.location.search);
+      const keep = ['stage', 'email_id', 'contact_id', 'challenge', 'click_id', 'offer_id',
+        'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+      const target = new URL('/checkout-redirect', window.location.origin);
+      for (const k of keep) {
+        const v = q.get(k);
+        if (v) target.searchParams.set(k, v);
+      }
+      if (!target.searchParams.has('stage')) target.searchParams.set('stage', 'up2');
+      if (!target.searchParams.has('offer_id')) target.searchParams.set('offer_id', 'up2');
+      document.getElementById('cta').setAttribute('href', target.toString());
+    })();
+  </script>
+</body>
+</html>

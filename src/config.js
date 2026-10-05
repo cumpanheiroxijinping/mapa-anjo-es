@@ -1,9 +1,7 @@
 // Frontend runtime config (Vite bakes these at BUILD time).
 // Non-secret values only. Secrets stay server-side.
 export const config = {
-  VSL1_EMBED_ID: import.meta.env.VITE_VSL1_EMBED_ID || '5ede5862-c8bb-47ed-9fe9-814bb13660f0',
-  VSL2_EMBED_ID: import.meta.env.VITE_VSL2_EMBED_ID || '76879b03-46a2-4702-b614-ed4f75ee77ee',
-  // --- VTurb / ConverteAI videos (replace the tynk.ai embeds above) ---
+  // --- VTurb / ConverteAI videos (NOT tynk.ai) ---
   // VSL1: video shown before the email capture overlay.
   VSL1_VTURB: {
     id: 'vid-6ac1651e89c7a03a20614f34',

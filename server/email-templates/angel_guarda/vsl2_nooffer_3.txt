@@ -1,28 +1,6 @@
-Subject line: Una señal para volver a tu lectura
-Preheader: Tu mapa contiene una orientación personal
+Subject line: La parte más personal de tu lectura te espera
+Preheader: Tu señal ya fue identificada; ahora falta comprenderla
 From: Mapa del Ángel - soporte@mail.timeoffaith.online
 
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>vsl2_nooffer_3</title>
-</head>
-<body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-    <tr><td align="center" style="padding:24px;">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;">
-        <tr><td style="padding:32px 28px;">
-          <h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En este momento de tu vida —%AGE|tu etapa actual% años, con tu cumpleaños en %BIRTH_MONTH|un mes especial% y bajo la energía de %ZODIAC_SIGN|tu signo%— hay una razón por la que esta lectura llamó tu atención.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Lo que sentiste al llegar hasta aquí merece más que una respuesta rápida. A veces una señal comienza como una pequeña inquietud y termina mostrando un patrón que llevabas años intentando comprender.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu mapa reúne tus respuestas, tu etapa de vida y la forma en que estás buscando orientación. No es un texto genérico: es una invitación a mirar tu historia con más claridad y menos culpa. En tu mapa encontrarás una explicación simbólica, preguntas para reflexionar y pasos sencillos que puedes aplicar a tu ritmo.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu historia merece una mirada que una espiritualidad, reflexión y pasos concretos. Vuelve a la lectura cuando puedas estar tranquila y elige la sección que más se relaciona con tu lectura.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tómate unos minutos, respira y observa qué parte de tu historia se repite. La claridad comienza cuando puedes nombrar lo que antes solo sentías.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%SUPPORT_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Continuar mi lectura</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p>
-        </td></tr>
-      </table>
-      <p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;">
-        <a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a>
-        &nbsp;·&nbsp;
-        <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a>
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>
+<html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>vsl2_nooffer_3</title></head><body style="margin:0;padding:0;background:#0b1020;font-family:Arial,Helvetica,sans-serif;color:#e9e9f0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px;"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#121a33;border-radius:12px;overflow:hidden;"><tr><td style="padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;color:#f4d58d;">Hola %FIRSTNAME|querida amiga% ✨</h1><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En tu caso, %LIFE_CHALLENGE|tu desafío principal% aparece ligado a %ZODIAC_SIGN|tu signo% y a la etapa que estás atravesando (%AGE|tu etapa actual% años). Tu cumpleaños en %BIRTH_MONTH|un mes especial% también puede convertirse en un momento de pausa para revisar qué deseas iniciar, cerrar o cuidar.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu historia no terminó cuando empezaste a resolver los problemas de los demás. Todavía existe una parte de ti que quiere crear, elegir y comenzar.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">Tu respuesta sobre tu felicidad y propósito no fue guardada para enviarte frases genéricas. Sirve para orientar la explicación hacia tu dirección personal y hacia el patrón que más deseas comprender.</p><p style="margin:0 0 16px;line-height:1.7;font-size:16px;">En la segunda parte conocerás por qué una persona puede rezar, esforzarse y aun así sentir que la señal no llega: el mecanismo de la oferta lo explica como una disonancia, una interferencia entre lo que deseas y la forma en que estás actuando.</p><table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;"><tr><td style="border-radius:8px;background:#f4d58d;"><a href="%VSL2_URL%" style="display:inline-block;padding:15px 28px;font-size:16px;font-weight:bold;color:#0b1020;text-decoration:none;">Continuar mi lectura</a></td></tr></table><p style="margin:28px 0 0;font-size:13px;color:#b4b8c8;line-height:1.6;">Si necesitas ayuda, responde a este correo o escribe a <a href="mailto:soporte@mail.timeoffaith.online" style="color:#f4d58d;">soporte@mail.timeoffaith.online</a>.</p><p style="margin:20px 0 0;font-size:13px;color:#9aa0b5;">Con cariño,<br/>El equipo de Mapa del Ángel de la Guarda</p></td></tr></table><p style="margin:16px 0 0;font-size:12px;color:#6b7186;line-height:1.6;"><a href="%UNSUBSCRIBE_URL%" style="color:#6b7186;">Cancelar suscripción</a> &nbsp;·&nbsp; <a href="%SUPPORT_URL%" style="color:#6b7186;">Soporte</a></p></td></tr></table></body></html>

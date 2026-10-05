@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continuando tu presentación – Mapa del Ángel de la Guarda</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif; color: #f4f1ea; background: #0b1020;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .bg { position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(circle at 50% 30%, #2a2350 0%, #0b1020 70%); }
+    .container { padding: 40px 24px; max-width: 640px; }
+    h1 { font-family: 'Cinzel', serif; font-size: clamp(24px, 6vw, 40px);
+      letter-spacing: 1px; margin-bottom: 14px; color: #f7e9c8; }
+    p { font-size: 17px; line-height: 1.6; color: #cfd3e0; margin-bottom: 14px; }
+    .spinner { width: 38px; height: 38px; margin: 22px auto 0;
+      border: 4px solid rgba(247,233,200,.25); border-top-color: #f7e9c8;
+      border-radius: 50%; animation: spin .9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="container">
+    <h1>Continuemos tu presentación</h1>
+    <p>Estabas viendo la segunda parte de tu lectura. Vamos a abrirla desde el
+       punto en que la dejaste.</p>
+    <div class="spinner"></div>
+  </div>
+  <script>
+    // Resume the funnel from where the lead left off. If this browser already
+    // captured the lead (email in localStorage), skip straight to VSL2; otherwise
+    // fall back to the SPA landing so the quiz runs fresh.
+    // Preserve the email campaign params (?email_id, ?challenge, ?utm_*) from the
+    // link so the SPA keeps attribution.
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var target = new URL('/', window.location.origin);
+      for (var key of ['email_id', 'contact_id', 'challenge', 'click_id', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+        var v = params.get(key);
+        if (v) target.searchParams.set(key, v);
+      }
+      var hasEmail = false;
+      try { hasEmail = !!localStorage.getItem('angel_lead_email'); } catch (e) {}
+      target.searchParams.set('resume', hasEmail ? 'vsl2' : 'landing');
+      window.location.replace(target.toString());
+    })();
+  </script>
+</body>
+</html>

@@ -276,6 +276,25 @@ CREATE INDEX IF NOT EXISTS idx_bulk_pending ON bulk_jobs(status) WHERE status = 
 CREATE INDEX IF NOT EXISTS idx_bulk_job ON bulk_jobs(job_id);
 `;
 
+// Click attribution for the intention-based redirector (spec §12). Best-effort
+// log so each click is attributable to the source template; never stores PII or
+// financial data.
+const CREATE_REDIRECT_CLICKS_TABLE = `
+CREATE TABLE IF NOT EXISTS redirect_clicks (
+  id            BIGSERIAL PRIMARY KEY,
+  email_id      TEXT,
+  stage         TEXT,
+  challenge     TEXT,
+  contact_id    TEXT,
+  provider      TEXT,
+  ip_address    TEXT,
+  user_agent    TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_redirect_email_id ON redirect_clicks(email_id);
+CREATE INDEX IF NOT EXISTS idx_redirect_created ON redirect_clicks(created_at DESC);
+`;
+
 export async function initDb() {
   const p = getPool();
   await p.query(CREATE_TABLE);
@@ -301,6 +320,7 @@ export async function initDb() {
   await p.query(CREATE_ADMIN_USERS_TABLE);
   await p.query(CREATE_TRANSACTIONS_TABLE);
   await p.query(CREATE_BULK_JOBS_TABLE);
+  await p.query(CREATE_REDIRECT_CLICKS_TABLE);
   // Normalize funnel_events.event_id to TEXT (was UUID). Allows any unique
   // idempotency string (spec §15) — e.g. postback "CODE_STATUS" composites.
   await p.query(`

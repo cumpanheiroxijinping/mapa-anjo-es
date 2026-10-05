@@ -69,6 +69,17 @@ const stage = ref('landing'); // landing | quiz | vsl1 | vsl2 | alert | cta
 const emailOpen = ref(false);
 const quizAnswers = ref({});
 
+// Resume intent from the intention-based email routes (/continuar-vsl2,
+// /continuar-quiz). If the link says resume=vsl2 AND this browser already
+// captured the lead, skip straight to VSL2. Otherwise start at landing (the
+// quiz re-runs fresh). UTMs from the query are already captured by useUtm.
+const resume = new URLSearchParams(window.location.search).get('resume');
+if (resume === 'vsl2') {
+  let hasEmail = false;
+  try { hasEmail = !!localStorage.getItem('angel_lead_email'); } catch (e) {}
+  if (hasEmail) stage.value = 'vsl2';
+}
+
 let captureTimer = null;
 
 function onQuizComplete(answers) {
