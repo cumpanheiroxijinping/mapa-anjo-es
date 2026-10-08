@@ -4,19 +4,19 @@ export const config = {
   // --- VTurb / ConverteAI videos (NOT tynk.ai) ---
   // VSL1: video shown before the email capture overlay.
   VSL1_VTURB: {
-    id: 'vid-6ac1651e89c7a03a20614f34',
-    playerId: '6ac1651e89c7a03a20614f34',
+    id: 'vid-6ac7e81bbfc6689edfc25a5b',
+    playerId: '6ac7e81bbfc6689edfc25a5b',
     scriptSrc:
-      'https://scripts.converteai.net/eaf1c93c-4678-434c-baf0-14a7282b15d6/players/6ac1651e89c7a03a20614f34/v4/player.js',
+      'https://scripts.converteai.net/8671d2f6-c45f-4b55-9776-68f6c495a79a/players/6ac7e81bbfc6689edfc25a5b/v4/player.js',
     // padding-top % of the placeholder = (video height / width) * 100.
-    placeholderPadding: 178.21782178217822,
+    placeholderPadding: 177.77777777777777,
   },
   // VSL2: video shown after the email capture overlay (A/B test variant).
   VSL2_VTURB: {
-    id: 'ab-6ac1662495be2f74ba5fcbe5',
-    playerId: '6ac1662495be2f74ba5fcbe5',
+    id: 'ab-6ac7f321e1c65eaf91843ba8',
+    playerId: '6ac7f321e1c65eaf91843ba8',
     scriptSrc:
-      'https://scripts.converteai.net/eaf1c93c-4678-434c-baf0-14a7282b15d6/ab-test/6ac1662495be2f74ba5fcbe5/player.js',
+      'https://scripts.converteai.net/8671d2f6-c45f-4b55-9776-68f6c495a79a/ab-test/6ac7f321e1c65eaf91843ba8/player.js',
     placeholderPadding: 177.77777777777777,
   },
   CHECKOUT_URL: import.meta.env.VITE_CHECKOUT_URL || 'https://pay.youshop.co/DS7KII7HJJ5MLP59',
