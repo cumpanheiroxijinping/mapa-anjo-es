@@ -13,10 +13,10 @@ export const config = {
   },
   // VSL2: video shown after the email capture overlay (A/B test variant).
   VSL2_VTURB: {
-    id: 'ab-6ac7f321e1c65eaf91843ba8',
-    playerId: '6ac7f321e1c65eaf91843ba8',
+    id: 'vid-6ac7eaf16785d5b41a2990be',
+    playerId: '6ac7eaf16785d5b41a2990be',
     scriptSrc:
-      'https://scripts.converteai.net/8671d2f6-c45f-4b55-9776-68f6c495a79a/ab-test/6ac7f321e1c65eaf91843ba8/player.js',
+      'https://scripts.converteai.net/8671d2f6-c45f-4b55-9776-68f6c495a79a/players/6ac7eaf16785d5b41a2990be/v4/player.js',
     placeholderPadding: 177.77777777777777,
   },
   CHECKOUT_URL: import.meta.env.VITE_CHECKOUT_URL || 'https://pay.youshop.co/DS7KII7HJJ5MLP59',
