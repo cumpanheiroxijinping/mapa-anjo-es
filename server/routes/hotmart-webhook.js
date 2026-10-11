@@ -42,16 +42,34 @@ const EVENT_MAP = {
   ABANDONED_CHECKOUT: 'checkout_abandoned', // pre-payment abandonment
 };
 
+const TRANSACTION_STATUS_MAP = {
+  PURCHASE_APPROVED: 'approved',
+  PURCHASE_COMPLETE: 'approved',
+  PURCHASE_CANCELED: 'canceled',
+  PURCHASE_REFUNDED: 'refunded',
+  REFUND: 'refunded',
+  PURCHASE_CHARGEBACK: 'chargeback',
+  CHARGEBACK: 'chargeback',
+  BILLET_PRINTED: 'pending',
+  PURCHASE_DELAYED: 'pending',
+  ABANDONED_CHECKOUT: 'abandonment',
+};
+
 function tokenValid(headerToken) {
   const expectedToken = process.env.HOTMART_TOKEN || '';
   if (!expectedToken) {
     console.error('[hotmart] HOTMART_TOKEN not set — refusing postback (fail closed)');
     return false;
   }
-  if (typeof headerToken !== 'string' || !headerToken) return false;
+  if (typeof headerToken !== 'string' || !headerToken) {
+    console.warn('[hotmart] X-HOTMART-HOTTOK header missing');
+    return false;
+  }
   const a = Buffer.from(headerToken);
   const b = Buffer.from(expectedToken);
-  return a.length === b.length && timingSafeEqual(a, b);
+  const valid = a.length === b.length && timingSafeEqual(a, b);
+  if (!valid) console.warn('[hotmart] X-HOTMART-HOTTOK does not match HOTMART_TOKEN');
+  return valid;
 }
 
 function normalizeEmail(raw) {
@@ -128,7 +146,7 @@ async function handlePostback(body) {
         product: data.product?.name || null,
         value: price?.value != null ? Number(price.value) : null,
         currency: price?.currency_value || null,
-        status: mappedEvent, // normalized internal event as status
+        status: TRANSACTION_STATUS_MAP[event] || mappedEvent,
         rawPayload: body,
       });
     } catch (txErr) {

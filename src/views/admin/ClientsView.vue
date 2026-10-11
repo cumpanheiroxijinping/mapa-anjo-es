@@ -1,7 +1,12 @@
 <template>
   <div>
     <div class="stats-grid" v-if="stats">
-      <StatCard label="Receita" :value="money(stats.revenue)" accent />
+      <StatCard label="Receita" accent>
+        <div v-for="revenue in stats.revenueByCurrency || []" :key="revenue.currency" class="revenue-line">
+          {{ money(revenue.total, revenue.currency) }}
+        </div>
+        <div v-if="!stats.revenueByCurrency?.length" class="revenue-line">—</div>
+      </StatCard>
       <StatCard label="Aprovadas" :value="stats.approved" />
       <StatCard label="Reembolsos" :value="stats.refunded" />
       <StatCard label="Chargebacks" :value="stats.chargeback" />
@@ -28,8 +33,8 @@
       <template #cell-status="{ value }">
         <Badge :text="value" :variant="statusVariant(value)" />
       </template>
-      <template #cell-value="{ value }">
-        <span class="mono">{{ money(value) }}</span>
+      <template #cell-value="{ row, value }">
+        <span class="mono">{{ money(value, row.currency) }}</span>
       </template>
       <template #cell-email="{ value }">
         <span class="mono">{{ value }}</span>
@@ -98,9 +103,13 @@ function statusVariant(s) {
   if (s === 'pending') return 'blue';
   return '';
 }
-function money(v) {
+function money(v, currency) {
   const n = Number(v || 0);
-  return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const code = String(currency || '').toUpperCase();
+  if (!/^[A-Z]{3}$/.test(code)) {
+    return `${n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${code || ''}`.trim();
+  }
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: code }).format(n);
 }
 function pretty(o) { try { return JSON.stringify(o, null, 2); } catch { return ''; } }
 function fmt(ts) { return ts ? new Date(ts).toLocaleString() : ''; }
@@ -133,3 +142,10 @@ function openDetail(row) { detail.value = row; }
 
 onMounted(load);
 </script>
+
+<style scoped>
+.revenue-line {
+  font-size: 15px;
+  line-height: 1.5;
+}
+</style>

@@ -1,8 +1,7 @@
 <template>
   <div class="stat-card">
     <div class="label">{{ label }}</div>
-    <div class="value" :class="{ accent }">{{ value }}</div>
-    <slot />
+    <div class="value" :class="{ accent }"><slot>{{ value }}</slot></div>
   </div>
 </template>
 
