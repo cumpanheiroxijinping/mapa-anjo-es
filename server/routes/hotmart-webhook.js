@@ -1,8 +1,7 @@
 // POST /api/postback/hotmart — Hotmart Webhooks API (v2) server-side postback.
 //
-// Authentication: NOT a token in the body. Hotmart signs the raw request body
-// with HMAC-SHA256, delivered in the `X-Hotmart-Signature` header as a hex
-// digest (sometimes prefixed "sha256="). We verify it against HOTMART_TOKEN.
+// Authentication: Hotmart sends the configured webhook verification token in
+// the `X-HOTMART-HOTTOK` header.
 //
 // Real payload shape (Hotmart Webhooks API v2, PURCHASE_APPROVED example):
 // {
@@ -22,14 +21,12 @@
 //   "event": "PURCHASE_APPROVED"
 // }
 
-import crypto from 'crypto';
+import { timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import { getPool, insertPostbackLog, upsertContactState, upsertTransaction } from '../db.js';
 import { ingestEvent } from '../services/automation-engine.js';
 
 const router = Router();
-
-const HOTMART_TOKEN = process.env.HOTMART_TOKEN || '';
 
 // Hotmart Webhooks event -> internal event name (spec §6 state machine).
 const EVENT_MAP = {
@@ -45,19 +42,16 @@ const EVENT_MAP = {
   ABANDONED_CHECKOUT: 'checkout_abandoned', // pre-payment abandonment
 };
 
-function signatureValid(rawBody, headerSig) {
-  if (!HOTMART_TOKEN) {
-    console.warn('[hotmart] HOTMART_TOKEN not set — refusing (fail closed)');
+function tokenValid(headerToken) {
+  const expectedToken = process.env.HOTMART_TOKEN || '';
+  if (!expectedToken) {
+    console.error('[hotmart] HOTMART_TOKEN not set — refusing postback (fail closed)');
     return false;
   }
-  if (!headerSig) return false;
-  // Header may arrive as "sha256=<hex>" or plain "<hex>".
-  const provided = headerSig.startsWith('sha256=') ? headerSig.slice(7) : headerSig;
-  const expected = crypto.createHmac('sha256', HOTMART_TOKEN).update(rawBody).digest('hex');
-  // Constant-time compare.
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  if (typeof headerToken !== 'string' || !headerToken) return false;
+  const a = Buffer.from(headerToken);
+  const b = Buffer.from(expectedToken);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 function normalizeEmail(raw) {
@@ -68,8 +62,7 @@ function normalizeEmail(raw) {
 
 router.post('/hotmart', async (req, res) => {
   // Always respond 2xx fast (spec §14: responder rápido).
-  const rawBody = req.rawBody || JSON.stringify(req.body);
-  if (!signatureValid(rawBody, req.headers['x-hotmart-signature'])) {
+  if (!tokenValid(req.headers['x-hotmart-hottok'])) {
     return res.status(401).json({ ok: false, error: 'unauthorized' });
   }
 
@@ -82,7 +75,10 @@ router.post('/hotmart', async (req, res) => {
 });
 
 async function handlePostback(body) {
-  const id = body.id || body.transaction_id || body.code;
+  const data = body.data || {};
+  const buyer = data.buyer || {};
+  const purchase = data.purchase || {};
+  const id = purchase.transaction || body.transaction_id || body.code || body.id;
   if (!id) {
     console.warn('[hotmart] postback without id — ignored');
     return;
@@ -94,9 +90,6 @@ async function handlePostback(body) {
     console.warn(`[hotmart] unknown event "${event}" — logged only`);
   }
 
-  const data = body.data || {};
-  const buyer = data.buyer || {};
-  const purchase = data.purchase || {};
   const email = normalizeEmail(buyer.email);
 
   // Idempotent + status-change-aware log (pending -> approved must reapply).
@@ -131,7 +124,7 @@ async function handlePostback(body) {
       await upsertTransaction({
         code: String(id),
         email,
-        name: [buyer.first_name, buyer.last_name].filter(Boolean).join(' ').trim() || null,
+        name: buyer.name || [buyer.first_name, buyer.last_name].filter(Boolean).join(' ').trim() || null,
         product: data.product?.name || null,
         value: price?.value != null ? Number(price.value) : null,
         currency: price?.currency_value || null,
