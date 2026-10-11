@@ -1,12 +1,7 @@
 <template>
   <div>
     <div class="stats-grid" v-if="stats">
-      <StatCard label="Receita" accent>
-        <div v-for="revenue in stats.revenueByCurrency || []" :key="revenue.currency" class="revenue-line">
-          {{ money(revenue.total, revenue.currency) }}
-        </div>
-        <div v-if="!stats.revenueByCurrency?.length" class="revenue-line">—</div>
-      </StatCard>
+      <StatCard label="Receita (USD)" :value="money(stats.revenueUsd, 'USD')" accent />
       <StatCard label="Aprovadas" :value="stats.approved" />
       <StatCard label="Reembolsos" :value="stats.refunded" />
       <StatCard label="Chargebacks" :value="stats.chargeback" />
@@ -67,7 +62,7 @@ import Modal from '../../components/admin/Modal.vue';
 import Pagination from '../../components/admin/Pagination.vue';
 import { transactionsApi } from '../../composables/useApi.js';
 
-const statuses = ['approved', 'canceled', 'rejected', 'chargeback', 'abandonment', 'pending'];
+const statuses = ['approved', 'canceled', 'rejected', 'refunded', 'chargeback', 'abandonment', 'pending'];
 const filters = reactive({ search: '', status: '', startDate: '', endDate: '' });
 const columns = [
   { key: 'transaction_id', label: 'ID' },
@@ -142,10 +137,3 @@ function openDetail(row) { detail.value = row; }
 
 onMounted(load);
 </script>
-
-<style scoped>
-.revenue-line {
-  font-size: 15px;
-  line-height: 1.5;
-}
-</style>

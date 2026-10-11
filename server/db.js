@@ -1187,6 +1187,8 @@ export async function listTransactions({
   if (status) {
     if (status === 'approved') {
       where.push(`status IN ('approved', 'purchase_completed')`);
+    } else if (status === 'refunded') {
+      where.push(`status IN ('refunded', 'purchase_refunded')`);
     } else {
       where.push(`status = $${n++}`);
       params.push(status);
@@ -1197,7 +1199,11 @@ export async function listTransactions({
   const p = getPool();
   const rows = await p.query(
     `SELECT transactions.*,
-            CASE WHEN transactions.status = 'purchase_completed' THEN 'approved' ELSE transactions.status END AS status
+            CASE transactions.status
+              WHEN 'purchase_completed' THEN 'approved'
+              WHEN 'purchase_refunded' THEN 'refunded'
+              ELSE transactions.status
+            END AS status
      FROM transactions ${clause} ORDER BY created_at DESC LIMIT $${n++} OFFSET $${n++}`,
     [...params, limit, offset]
   );
@@ -1207,16 +1213,14 @@ export async function listTransactions({
 
 export async function getTransactionStats() {
   const p = getPool();
-  const [approved, refunded, chargeback, revenueByCurrency, today, week] = await Promise.all([
+  const [approved, refunded, chargeback, revenueUsd, today, week] = await Promise.all([
     p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status IN ('approved', 'purchase_completed')`),
-    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'refunded'`),
+    p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status IN ('refunded', 'purchase_refunded')`),
     p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status = 'chargeback'`),
-    p.query(`SELECT COALESCE(NULLIF(UPPER(currency), ''), 'UNKNOWN') AS currency,
-                    COALESCE(SUM(value), 0)::float AS total
+    p.query(`SELECT COALESCE(SUM(value), 0)::float AS total
              FROM transactions
              WHERE status IN ('approved', 'purchase_completed')
-             GROUP BY COALESCE(NULLIF(UPPER(currency), ''), 'UNKNOWN')
-             ORDER BY currency`),
+               AND UPPER(currency) = 'USD'`),
     p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status IN ('approved', 'purchase_completed') AND created_at::date = NOW()::date`),
     p.query(`SELECT COUNT(*)::int AS c FROM transactions WHERE status IN ('approved', 'purchase_completed') AND created_at >= NOW() - INTERVAL '7 days'`),
   ]);
@@ -1224,7 +1228,7 @@ export async function getTransactionStats() {
     approved: approved.rows[0].c,
     refunded: refunded.rows[0].c,
     chargeback: chargeback.rows[0].c,
-    revenueByCurrency: revenueByCurrency.rows,
+    revenueUsd: revenueUsd.rows[0].total || 0,
     today: today.rows[0].c,
     thisWeek: week.rows[0].c,
     total: approved.rows[0].c + refunded.rows[0].c + chargeback.rows[0].c,
