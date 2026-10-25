@@ -313,6 +313,14 @@ export async function initDb() {
     CREATE UNIQUE INDEX IF NOT EXISTS uq_leads_email ON leads(email);
   `);
   await p.query(CREATE_EMAIL_TABLES);
+  // Add provider_message_id BEFORE CREATE_TRACKING_TABLES: its index
+  // references the column, so on a pre-existing table (CREATE TABLE IF NOT
+  // EXISTS is a no-op) the CREATE INDEX would abort the whole statement
+  // group and the column would never be added.
+  await p.query(`
+    ALTER TABLE email_tracking
+      ADD COLUMN IF NOT EXISTS provider_message_id TEXT
+  `).catch((e) => console.warn('[db] provider_message_id migration skipped:', e.message));
   await p.query(CREATE_TRACKING_TABLES);
   await p.query(CREATE_CONTACT_STATE_TABLE);
   await p.query(CREATE_FUNNEL_EVENTS_TABLE);
@@ -338,15 +346,6 @@ export async function initDb() {
       END IF;
     END $$;
   `).catch((e) => console.warn('[db] event_id migration skipped:', e.message));
-  // Add provider_message_id to pre-existing email_tracking tables (Resend
-  // webhook correlation). No-op when the column already exists.
-  await p.query(`
-    ALTER TABLE email_tracking
-      ADD COLUMN IF NOT EXISTS provider_message_id TEXT
-  `).catch((e) => console.warn('[db] provider_message_id migration skipped:', e.message));
-  await p.query(`
-    CREATE INDEX IF NOT EXISTS idx_tracking_provider ON email_tracking(provider_message_id)
-  `).catch((e) => console.warn('[db] idx_tracking_provider migration skipped:', e.message));
   console.log('[db] leads + email + automation tables ready');
 }
 
