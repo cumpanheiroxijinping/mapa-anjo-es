@@ -37,7 +37,7 @@ async function submit() {
     return;
   }
   error.value = '';
-  // Capture lead (Brevo + Postgres). Pass the partial quiz answers so far.
+  // Capture lead (Postgres). Pass the partial quiz answers so far.
   await submitLead({ email: value, first_name: props.firstName, source: 'vsl1_email_capture' });
   track('lead_conversion', { email: value, source: 'vsl1_email_capture' });
   emit('captured', value);

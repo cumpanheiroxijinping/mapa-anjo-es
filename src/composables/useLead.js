@@ -1,4 +1,4 @@
-// Submit a lead to our backend (which persists to Postgres + Brevo).
+// Submit a lead to our backend (which persists to Postgres).
 import { config } from '../config.js';
 import { getUtm } from './useUtm.js';
 import { fireEvent, setLeadEmail } from './useEvent.js';

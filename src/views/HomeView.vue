@@ -35,7 +35,7 @@
       <!-- VSL 2 -->
       <section v-if="stage === 'vsl2'">
         <h2 class="subtitulo-principal" style="text-align:center;">Aquí está el mensaje de tu Ángel…</h2>
-        <VturbVideo :cfg="config.VSL2_VTURB" key-name="vsl2" />
+        <VturbVideo :cfg="vsl2Cfg" key-name="vsl2" />
       </section>
 
       <!-- ALERT MODAL -->
@@ -61,13 +61,29 @@ import VturbVideo from '../components/VturbVideo.vue';
 import AlertModal from '../components/AlertModal.vue';
 import FinalCta from '../components/FinalCta.vue';
 import EmailCaptureOverlay from '../components/EmailCaptureOverlay.vue';
-import { config } from '../config.js';
+import { config, getVsl2Config } from '../config.js';
 import { track } from '../composables/useAnalytics.js';
 import { submitLead } from '../composables/useLead.js';
 
 const stage = ref('landing'); // landing | quiz | vsl1 | vsl2 | alert | cta
 const emailOpen = ref(false);
 const quizAnswers = ref({});
+
+// --- Affiliate ref (?) capture + persistence -------------------------------
+// The affiliate starts the funnel with ?ref=CODE. We persist it so the
+// matching affiliate VSL2 keeps showing across quiz steps, the email
+// overlay, resume links (/continuar-vsl2) and reloads.
+const REF_STORAGE_KEY = 'angel_affiliate_ref';
+function captureAffiliateRef() {
+  const fromUrl = new URLSearchParams(window.location.search).get('ref');
+  if (fromUrl) {
+    try { localStorage.setItem(REF_STORAGE_KEY, fromUrl.trim()); } catch (e) {}
+    return fromUrl.trim();
+  }
+  try { return localStorage.getItem(REF_STORAGE_KEY) || ''; } catch (e) { return ''; }
+}
+const affiliateRef = captureAffiliateRef();
+const vsl2Cfg = getVsl2Config(affiliateRef);
 
 // Resume intent from the intention-based email routes (/continuar-vsl2,
 // /continuar-quiz). If the link says resume=vsl2 AND this browser already
@@ -85,8 +101,8 @@ let captureTimer = null;
 function onQuizComplete(answers) {
   quizAnswers.value = answers;
   track('quiz_completed', { sign: answers.zodiac_sign });
-  // Persist full quiz answers as a lead (no email yet → Brevo skips, Postgres stores if email present;
-  // we wait for email at 5:04, but store partial now too).
+  // Persist full quiz answers as a lead (Postgres stores it once email is
+  // captured; we wait for email at 5:04, but store partial now too).
   stage.value = 'vsl1';
 }
 
