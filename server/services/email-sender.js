@@ -473,6 +473,12 @@ export async function sendTemplateEmail({
   if (!email) {
     throw new Error('sendTemplateEmail: recipient email is required');
   }
+  // Resend rejects non-ASCII addresses (typos like "gmaiñ.com" from lead
+  // forms). Fail fast with a clear message so the caller can mark the
+  // lead instead of endless retries.
+  if (/[^\x00-\x7F]/.test(email)) {
+    throw new Error(`sendTemplateEmail: recipient has non-ASCII characters: ${email}`);
+  }
 
   const tmpl = parseTemplateFile(getTemplateFile(template));
 
@@ -502,10 +508,12 @@ export async function sendTemplateEmail({
       'X-Param-TrackId': effectiveTrackId,
       'X-Param-Template': template,
     },
-    // Resend tags: [{ name, value }]; values limited to [A-Za-z0-9_-].
-    tags: (Array.isArray(tags) && tags.length ? tags : [template])
+    // Resend tags: [{ name, value }]; name/value limited to [A-Za-z0-9_-].
+    // Use each tag string as its own name (deduped) so multiple tags never
+    // collide on one name (Resend 422s on duplicated tag names).
+    tags: [...new Set(Array.isArray(tags) && tags.length ? tags : [template])]
       .map((t) => String(t).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 256))
-      .map((t) => ({ name: 'template', value: t })),
+      .map((t) => ({ name: t, value: t })),
   };
 
   const response = await fetchWithRetry(`${RESEND_API_URL}/emails`, {
