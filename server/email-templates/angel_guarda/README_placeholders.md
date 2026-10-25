@@ -1,7 +1,7 @@
 # Templates revisados
 
 Todos os templates foram ampliados, segmentados e atualizados para o remetente:
-`soporte@mail.timeoffaith.online`
+`soporte@resend.timeoffaith.online`
 
 ## Placeholders
 

@@ -6,8 +6,8 @@
 // behavior the spec requires: purchase cancels recovery, rejected->approved,
 // opt-out stops sends, idempotent events, timezone/silent-hour handling.
 //
-// Email SEND may fail if BREVO_API_KEY/TRACKING_BASE_URL are unset in prod;
-// we treat a non-2xx on the actual Brevo call as "send attempted" and verify
+// Email SEND may fail if RESEND_API_KEY/TRACKING_BASE_URL are unset in prod;
+// we treat a non-2xx on the actual Resend call as "send attempted" and verify
 // the state machine + cancellation logic (which is what §15 really checks).
 
 const APP = process.env.APP_URL || 'https://mapa.timeoffaith.online';

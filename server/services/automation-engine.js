@@ -334,7 +334,7 @@ async function processPendingSend(row) {
       tags: [row.automation_key, row.step_key],
       params: { automation_key: row.automation_key, step_key: row.step_key },
     });
-    await createTrackingRecord(result.trackId, email, row.template, null).catch(() => {});
+    await createTrackingRecord(result.trackId, email, row.template, null, result.providerMessageId).catch(() => {});
     await markPendingSent(row.id, result.trackId);
     if (row.priority > 2) {
       await updateContactState(email, { last_promo_email_at: new Date().toISOString() });

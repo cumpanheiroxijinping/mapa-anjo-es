@@ -2,8 +2,8 @@
 //
 // Self-hosted tracking: a 1x1 transparent pixel served at GET /t/o/:trackId
 // records an "open", and link redirects at GET /t/c/:trackId record a "click"
-// before 302-redirecting to the original URL. Brevo webhook events
-// (delivered/bounce/unsubscribed/complaint) are also recorded via recordEvent.
+// before 302-redirecting to the original URL. Resend webhook events
+// (delivered/bounce/complaint) are also recorded via recordEvent.
 //
 // NOTE: this is NOT Meta/Facebook tracking — the pixel lives on our own server
 // and measures email engagement only. No third-party ad pixels are involved.
@@ -23,16 +23,31 @@ export function getTrackingPixel() {
 /**
  * Create a tracking record for a sent email. track_id is generated upstream
  * (email-sender.js) as "eml_...". Idempotent on conflict.
+ * providerMessageId (Resend email id) is stored so webhook events can be
+ * correlated back to our track_id.
  */
-export async function createTrackingRecord(trackId, email, template, campaignId = null) {
+export async function createTrackingRecord(trackId, email, template, campaignId = null, providerMessageId = null) {
   const p = getPool();
   await p.query(
-    `INSERT INTO email_tracking (track_id, email, template, campaign_id)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO email_tracking (track_id, email, template, campaign_id, provider_message_id)
+     VALUES ($1, $2, $3, $4, $5)
      ON CONFLICT (track_id) DO NOTHING`,
-    [trackId, email, template, campaignId]
+    [trackId, email, template, campaignId, providerMessageId]
   );
   return trackId;
+}
+
+/**
+ * Resolve our track_id from a provider message id (Resend webhook correlation).
+ */
+export async function getTrackIdByProviderMessageId(providerMessageId) {
+  if (!providerMessageId) return null;
+  const p = getPool();
+  const res = await p.query(
+    'SELECT track_id FROM email_tracking WHERE provider_message_id = $1 LIMIT 1',
+    [providerMessageId]
+  );
+  return res.rows[0]?.track_id || null;
 }
 
 /**

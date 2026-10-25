@@ -97,7 +97,7 @@ router.get('/funnel-events', async (req, res) => {
 // POST /api/monitor/trigger-event
 //  body: { mode: 'reapply'|'resend', event?, segment?, tag?, template? }
 //  - reapply: re-ingest an event for all leads in segment (restarts F/G).
-//  - resend:  re-send a stage template via Brevo for all leads with `tag`.
+//  - resend:  re-send a stage template via Resend for all leads with `tag`.
 //
 // Items are written to the persistent bulk_jobs table (not run in-memory), so a
 // container restart mid-run does not lose progress — the processor reclaims

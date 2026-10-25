@@ -11,7 +11,7 @@ import transactionsRouter from './routes/transactions.js';
 import diagnosticsRouter from './routes/diagnostics.js';
 import emailRouter from './routes/email.js';
 import trackingRouter from './routes/tracking.js';
-import brevoWebhookRouter from './routes/brevo-webhook.js';
+import resendWebhookRouter from './routes/resend-webhook.js';
 import eventRouter from './routes/event.js';
 import perfectPayRouter from './routes/perfectpay-webhook.js';
 import hotmartWebhookRouter from './routes/hotmart-webhook.js';
@@ -28,8 +28,8 @@ const distDir = path.join(__dirname, '..', 'dist');
 dotenv.config();
 
 const app = express();
-// Capture the raw body so webhook routes (Hotmart) can verify an HMAC
-// signature over the exact bytes received. Harmless for other routes.
+// Capture the raw body so webhook routes (Hotmart, Resend/svix) can verify an
+// HMAC signature over the exact bytes received. Harmless for other routes.
 app.use(express.json({
   verify: (req, _res, buf) => {
     if (buf && buf.length) req.rawBody = buf.toString('utf8');
@@ -47,7 +47,7 @@ app.use('/api/admin/leads', leadsAdminRouter);
 app.use('/api/admin/transactions', transactionsRouter);
 app.use('/api/admin/diagnostics', diagnosticsRouter);
 app.use('/api/email', emailRouter);
-app.use('/api/brevo/webhook', brevoWebhookRouter);
+app.use('/api/resend/webhook', resendWebhookRouter);
 app.use('/api/event', eventRouter);
 app.use('/api/postback', perfectPayRouter);
 app.use('/api/postback', hotmartWebhookRouter);
@@ -112,7 +112,7 @@ async function start() {
     console.warn('[db] DATABASE_URL not set — lead persistence disabled');
   }
 
-  // Email campaign scheduler (in-process). No-op if Brevo key missing, but the
+  // Email campaign scheduler (in-process). No-op if Resend key missing, but the
   // timer is harmless and lets campaigns run once credentials are added.
   try {
     startEmailScheduler();

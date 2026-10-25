@@ -1,17 +1,17 @@
-// Brevo Transactional Email Service (ported + hardened from ZAPSPY).
+// Resend Transactional Email Service (ported + hardened from ZAPSPY).
 //
-// Sends templated transactional emails via Brevo's SMTP/Transactional API
-// (POST /v3/smtp/email), reading templates from local .txt files and
-// substituting lead variables at send time.
+// Sends templated transactional emails via Resend's API (POST /emails),
+// reading templates from local .txt files and substituting lead variables at
+// send time. Templates and funnel logic live in this repo — Resend is only
+// the delivery layer.
 //
-// Differences from the original ZAPSPY module:
 //   - DB is NOT coupled: lead data is passed in by the caller (leadToTemplateVars).
 //   - fetch() has a timeout (AbortController) + bounded retry with backoff.
 //   - Open/click tracking pixel is optional (set TRACKING_BASE_URL; pass trackId).
-//   - Variable set expanded to the angel_guarda `leads` schema (gender, civil
-//     status, birth_year -> AGE, zodiac_sign, life_challenge, utm_*).
+//   - providerMessageId (Resend's email id) is returned so the webhook can
+//     correlate delivery/bounce events back to our track_id.
 //
-// Docs: https://developers.brevo.com/reference/sendtransacemail
+// Docs: https://resend.com/docs/api-reference/emails/send-email
 
 import fs from 'fs';
 import path from 'path';
@@ -21,17 +21,17 @@ import { buildUnsubscribeToken } from './link-tokens.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.join(__dirname, '..', 'email-templates');
 
-const BREVO_API_URL = (process.env.BREVO_API_BASE_URL || 'https://api.brevo.com/v3').replace(/\/$/, '');
+const RESEND_API_URL = (process.env.RESEND_API_BASE_URL || 'https://api.resend.com').replace(/\/$/, '');
 
 // --- Config (env-driven, no hardcoding of secrets) ---
 function getApiKey() {
-  return process.env.BREVO_API_KEY || '';
+  return process.env.RESEND_API_KEY || '';
 }
 function getSenderEmail() {
-  return process.env.BREVO_SENDER_EMAIL || 'noreply@mapa-del-angel.com';
+  return process.env.RESEND_SENDER_EMAIL || 'soporte@resend.timeoffaith.online';
 }
 function getSenderName() {
-  return process.env.BREVO_SENDER_NAME || 'Mapa del Ángel de la Guarda';
+  return process.env.RESEND_SENDER_NAME || 'Mapa del Ángel de la Guarda';
 }
 function getTrackingBaseUrl() {
   return (process.env.TRACKING_BASE_URL || '').replace(/\/$/, '');
@@ -175,7 +175,7 @@ export function injectTracking(html, trackId) {
 }
 
 /**
- * fetch with timeout + bounded retry/backoff. Brevo is the only provider.
+ * fetch with timeout + bounded retry/backoff. Resend is the only provider.
  */
 async function fetchWithRetry(url, options, { retries = 3, timeoutMs = 10000, baseDelayMs = 400 } = {}) {
   let lastErr;
@@ -454,9 +454,9 @@ function maritalLabel(value) {
  * @param {Record<string,string>} [opts.vars] - extra/override variables
  * @param {object} [opts.lead]         - lead record; mapped to vars automatically
  * @param {string} [opts.trackId]      - existing track id (generated if omitted)
- * @param {string[]} [opts.tags]       - Brevo tags
- * @param {object} [opts.params]       - extra Brevo `params` (webhook correlation)
- * @returns {Promise<{trackId:string, data:object}>}
+ * @param {string[]} [opts.tags]       - Resend tags
+ * @param {object} [opts.params]       - ignored (kept for interface compat)
+ * @returns {Promise<{trackId:string, providerMessageId:string, data:object}>}
  */
 export async function sendTemplateEmail({
   email,
@@ -465,11 +465,10 @@ export async function sendTemplateEmail({
   lead,
   trackId,
   tags = [],
-  params = {},
 }) {
   const apiKey = getApiKey();
   if (!apiKey) {
-    throw new Error('Brevo not configured: BREVO_API_KEY missing');
+    throw new Error('Resend not configured: RESEND_API_KEY missing');
   }
   if (!email) {
     throw new Error('sendTemplateEmail: recipient email is required');
@@ -495,26 +494,24 @@ export async function sendTemplateEmail({
   htmlContent = injectTracking(htmlContent, effectiveTrackId);
 
   const payload = {
-    sender: { name: tmpl.fromName, email: tmpl.fromEmail },
-    to: [{ email }],
+    from: `"${tmpl.fromName}" <${tmpl.fromEmail}>`,
+    to: [email],
     subject,
-    htmlContent,
+    html: htmlContent,
     headers: {
       'X-Param-TrackId': effectiveTrackId,
       'X-Param-Template': template,
     },
-    params: {
-      track_id: effectiveTrackId,
-      template,
-      ...params,
-    },
-    tags: Array.isArray(tags) && tags.length ? tags : [template],
+    // Resend tags: [{ name, value }]; values limited to [A-Za-z0-9_-].
+    tags: (Array.isArray(tags) && tags.length ? tags : [template])
+      .map((t) => String(t).replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 256))
+      .map((t) => ({ name: 'template', value: t })),
   };
 
-  const response = await fetchWithRetry(`${BREVO_API_URL}/smtp/email`, {
+  const response = await fetchWithRetry(`${RESEND_API_URL}/emails`, {
     method: 'POST',
     headers: {
-      'api-key': apiKey,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
@@ -529,11 +526,12 @@ export async function sendTemplateEmail({
     data = { raw: text };
   }
 
-  if (!response.ok || (data && data.code && data.code !== 'success')) {
-    console.error(`[email-sender] send failed (${response.status}) to ${email} [${template}]:`, data);
-    throw new Error(`Brevo send failed: ${data?.message || data?.raw || response.status}`);
+  if (!response.ok || !data?.id) {
+    console.error(`[resend] send failed (${response.status}) to ${email} [${template}]:`, data);
+    throw new Error(`Resend send failed: ${data?.message || data?.raw || response.status}`);
   }
 
-  console.log(`[email-sender] sent "${template}" to ${email} trackId=${effectiveTrackId}`);
-  return { data, trackId: effectiveTrackId };
+  const providerMessageId = data.id;
+  console.log(`[resend] sent "${template}" to ${email} trackId=${effectiveTrackId} providerMessageId=${providerMessageId}`);
+  return { data, trackId: effectiveTrackId, providerMessageId };
 }

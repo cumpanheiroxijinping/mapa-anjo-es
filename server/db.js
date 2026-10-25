@@ -77,14 +77,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_queue_campaign_email
 const CREATE_TRACKING_TABLES = `
 -- Email open/click tracking records (one per sent email, keyed by track_id).
 CREATE TABLE IF NOT EXISTS email_tracking (
-  track_id     TEXT PRIMARY KEY,
-  email        TEXT NOT NULL,
-  template     TEXT,
-  campaign_id  BIGINT REFERENCES email_campaigns(id) ON DELETE SET NULL,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+  track_id            TEXT PRIMARY KEY,
+  email               TEXT NOT NULL,
+  template            TEXT,
+  campaign_id         BIGINT REFERENCES email_campaigns(id) ON DELETE SET NULL,
+  provider_message_id TEXT,              -- Resend email id (webhook correlation)
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_tracking_email ON email_tracking(email);
 CREATE INDEX IF NOT EXISTS idx_tracking_campaign ON email_tracking(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_tracking_provider ON email_tracking(provider_message_id);
 
 -- Individual tracking events (open/click/delivered/bounce/unsubscribed/complaint).
 CREATE TABLE IF NOT EXISTS email_tracking_events (
@@ -336,6 +338,15 @@ export async function initDb() {
       END IF;
     END $$;
   `).catch((e) => console.warn('[db] event_id migration skipped:', e.message));
+  // Add provider_message_id to pre-existing email_tracking tables (Resend
+  // webhook correlation). No-op when the column already exists.
+  await p.query(`
+    ALTER TABLE email_tracking
+      ADD COLUMN IF NOT EXISTS provider_message_id TEXT
+  `).catch((e) => console.warn('[db] provider_message_id migration skipped:', e.message));
+  await p.query(`
+    CREATE INDEX IF NOT EXISTS idx_tracking_provider ON email_tracking(provider_message_id)
+  `).catch((e) => console.warn('[db] idx_tracking_provider migration skipped:', e.message));
   console.log('[db] leads + email + automation tables ready');
 }
 

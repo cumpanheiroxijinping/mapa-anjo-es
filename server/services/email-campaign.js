@@ -130,14 +130,14 @@ async function processCampaign(campaign) {
       });
       await markQueueSent(row.id, result.trackId);
       // Persist a tracking record so opens/clicks can be correlated later.
-      await createTrackingRecord(result.trackId, row.lead_email, campaign.template, campaign.id).catch(() => {});
+      await createTrackingRecord(result.trackId, row.lead_email, campaign.template, campaign.id, result.providerMessageId).catch(() => {});
       sent++;
     } catch (err) {
       await markQueueFailed(row.id, err.message);
       failed++;
       console.error(`[campaign:${campaign.id}] send failed for ${row.lead_email}:`, err.message);
     }
-    // Pace individual sends to stay under Brevo rate limits.
+    // Pace individual sends to stay under Resend rate limits.
     await new Promise((r) => setTimeout(r, DEFAULT_SEND_RATE_MS));
   }
 

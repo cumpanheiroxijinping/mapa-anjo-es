@@ -1,9 +1,9 @@
-// One-off test sender: renders + sends a template to a single lead via Brevo,
+// One-off test sender: renders + sends a template to a single lead via Resend,
 // WITHOUT going through the admin API (so it works even if the local server
 // lacks JWT_SECRET/ADMIN_TOKEN). Reads config from the environment.
 //
 // Usage:
-//   DATABASE_URL=... BREVO_API_KEY=... CHECKOUT_URL=... SUPPORT_URL=... \
+//   DATABASE_URL=... RESEND_API_KEY=... CHECKOUT_URL=... SUPPORT_URL=... \
 //   TRACKING_BASE_URL=... node server/scripts/send-test.mjs <email> <template>
 
 import { getPool } from '../db.js';

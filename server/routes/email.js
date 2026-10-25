@@ -201,7 +201,7 @@ router.post('/send', async (req, res) => {
     });
 
     // Persist a tracking record so opens/clicks can be correlated later.
-    await createTrackingRecord(result.trackId, email, template, null).catch(() => {});
+    await createTrackingRecord(result.trackId, email, template, null, result.providerMessageId).catch(() => {});
 
     res.json({ ok: true, trackId: result.trackId });
   } catch (err) {

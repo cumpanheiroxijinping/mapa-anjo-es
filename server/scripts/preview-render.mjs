@@ -1,5 +1,5 @@
 // Local validation script: render an email template for a given lead WITHOUT
-// sending it (no Brevo call). Prints subject + which placeholders were filled
+// sending it (no Resend call). Prints subject + which placeholders were filled
 // vs. fell back to the template's fallback text.
 //
 // Usage: node server/scripts/preview-render.mjs <email> <template>

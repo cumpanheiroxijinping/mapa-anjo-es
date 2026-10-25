@@ -53,7 +53,7 @@ function clientIp(req) {
 
 // Best-effort click log so each click is attributable to the source template
 // (spec §12 "cada clique pode ser atribuído ao template de origem"). Mirrors the
-// existing email_tracking model but does not require a Brevo track_id.
+// existing email_tracking model but does not require a Resend track_id.
 async function logClick(req, stage, destinationProvider) {
   try {
     const emailId = req.query.email_id || null;

@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { insertLead } from '../db.js';
-import { createBrevoContact } from '../services/brevo.js';
 
 const router = Router();
 
@@ -36,11 +35,8 @@ router.post('/', async (req, res) => {
       funnel_name: body.funnel_name || process.env.FUNNEL_NAME || 'angel_guarda',
     };
 
-    // Persist to our Postgres (primary store)
+    // Persist to our Postgres (primary store — the only contact store)
     const saved = await insertLead(lead);
-
-    // Push to Brevo (non-blocking for the user; never fail the lead on Brevo error)
-    createBrevoContact(lead).catch((err) => console.error('[brevo] async error', err));
 
     res.json({ ok: true, id: saved.id });
   } catch (err) {
